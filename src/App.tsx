@@ -1,14 +1,16 @@
 import './App.css';
-import API from './components/api_machine';
+import GoldenList from './components/GoldenSamples';
 import SSEComponent from './components/Sse_app';
-import React, { useEffect } from 'react';
-import axios from 'axios';
+import { BrowserRouter as Router, Routes, Route} from 'react-router-dom';
 
-function App(){
+function App() {
   return (
-    <div>
-      <SSEComponent />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<SSEComponent />} />
+        <Route path="/goldens" element={<GoldenList />} />
+      </Routes>
+    </Router>
   );
 }
 
