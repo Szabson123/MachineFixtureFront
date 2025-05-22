@@ -44,4 +44,48 @@
     justify-content: space-between;
     margin-top: 20px;
   }
+
+  .footer-credit {
+    text-align: center;
+    margin-top: 40px;
+    font-size: 0.9rem;
+    color: #666;
+  }
+
+  .modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+  }
   
+  .modal-buttons button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  /* Dodaj - Przyjemny niebieski */
+  .modal-buttons button[type="submit"] {
+    background-color: #007bff;
+    color: white;
+  }
+  
+  .modal-buttons button[type="submit"]:hover {
+    background-color: #0069d9;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Anuluj - Szary */
+  .modal-buttons button[type="button"] {
+    background-color: #e0e0e0;
+    color: #333;
+  }
+  
+  .modal-buttons button[type="button"]:hover {
+    background-color: #d5d5d5;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }

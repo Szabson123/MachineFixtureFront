@@ -25,7 +25,7 @@
 
 .list-container {
     overflow-y: auto;
-    max-height: calc(660px - 60px); /* 60px na header */
+    max-height: calc(620px - 60px); /* 60px na header */
     padding-right: 8px;
     margin-top: 12px;
     scrollbar-width: thin;
@@ -171,3 +171,11 @@
 .add-pattern-btn:hover {
     background-color: #bbdefb; /* ciemniejsze przy najechaniu */
 }
+
+.footer-creditt {
+    font-family: 'Inter', sans-serif;
+    text-align: center;
+    margin-top: 40px;
+    font-size: 0.9rem;
+    color: #666;
+  }

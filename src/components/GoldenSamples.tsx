@@ -148,6 +148,9 @@ const GoldenList: React.FC = () => {
           }}
         />
       )}
+      <div className="footer-creditt">
+        Created by Krzysztof Balcerzak & Szymon Żaba
+      </div>
     </div>
   );
 };

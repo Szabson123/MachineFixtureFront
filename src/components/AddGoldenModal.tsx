@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import './AddGoldenModal.css';
 
+function getCookie(name: string): string {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()!.split(';').shift()!;
+    return '';
+  }
+  
 type Props = {
   onClose: () => void;
   onSuccess: () => void;
@@ -23,11 +30,15 @@ const AddGoldenModal: React.FC<Props> = ({onClose, onSuccess }) => {
     };
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/golden-samples/add-golden/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+        const res = await fetch('/api/golden-samples/add-golden/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCookie('csrftoken'), // jeśli backend wymaga
+            },
+            credentials: 'include', // ← TO JEST KLUCZ!
+            body: JSON.stringify(payload),
+          });
 
       if (res.ok) {
         onSuccess();
