@@ -7,6 +7,7 @@ type Golden = {
   golden_code: string;
   expire_date: string;
   type_golden: string;
+  counter?: number;
 };
 
 type Group = {
@@ -17,6 +18,7 @@ type Group = {
 type Variant = {
   code: string;
   group: Group;
+  name?: string;
   goldens: Golden[];
 };
 
@@ -94,7 +96,9 @@ const GoldenList: React.FC = () => {
                 onClick={() => setSelectedCode(variant.code)}
               >
                 <div>
-                  <span>{variant.code}</span>
+                <span>
+                  {variant.name ? `${variant.name}` : ""} -- {variant.code} 
+                </span>
                 </div>
                 <span className="status blue">{variant.goldens.length} szt.</span>
               </div>
@@ -126,7 +130,10 @@ const GoldenList: React.FC = () => {
                   </span>
                 </div>
                 <div className="expire-date">
-                  {new Date(golden.expire_date).toLocaleDateString()}
+                  <span>{new Date(golden.expire_date).toLocaleDateString()}</span>
+                  {typeof golden.counter === "number" && (
+                    <span className="counter-tag">{golden.counter}</span>
+                  )}
                 </div>
               </div>
             ))}

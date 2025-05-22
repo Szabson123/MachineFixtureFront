@@ -179,3 +179,12 @@
     font-size: 0.9rem;
     color: #666;
   }
+
+  .counter-tag {
+    background-color: #eee;
+    color: #333;
+    font-size: 0.8em;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 38px;
+  }
