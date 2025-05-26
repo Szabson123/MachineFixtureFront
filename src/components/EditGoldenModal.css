@@ -1,0 +1,118 @@
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(2px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .modal {
+    position: relative;
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px 32px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  .modal h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.4rem;
+    color: #333;
+  }
+  
+  .modal label {
+    display: block;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+    color: #444;
+  }
+  
+  .modal input,
+  .modal select {
+    width: 100%;
+    padding: 10px 12px;
+    margin-top: 6px;
+    margin-bottom: 16px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+  }
+  
+  .modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  
+  .modal-buttons button {
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .modal-buttons button[type="submit"] {
+    background-color: #2196f3;
+    color: white;
+  }
+  
+  .modal-buttons button[type="submit"]:hover {
+    background-color: #1976d2;
+  }
+  
+  .modal-buttons button[type="button"] {
+    background-color: #e0e0e0;
+    color: #333;
+  }
+  
+  .modal-buttons button[type="button"]:hover {
+    background-color: #c2c2c2;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+
+  .delete-button {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .delete-button:hover {
+    background-color: #d32f2f;
+  }

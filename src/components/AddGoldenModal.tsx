@@ -8,16 +8,18 @@ function getCookie(name: string): string {
     return '';
   }
   
-type Props = {
-  onClose: () => void;
-  onSuccess: () => void;
-};
+  type Props = {
+    variantCode: string;
+    onClose: () => void;
+    onSuccess: () => void;
+  };
 
-const AddGoldenModal: React.FC<Props> = ({onClose, onSuccess }) => {
+  const AddGoldenModal: React.FC<Props> = ({ variantCode, onClose, onSuccess }) => {
   const [sn, setSn] = useState('');
-  const [variant_code, setVariant] = useState('');
+  const [variant_code] = useState(variantCode);
   const [typeGolden, setTypeGolden] = useState('good');
   const [expireDate, setExpireDate] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +30,6 @@ const AddGoldenModal: React.FC<Props> = ({onClose, onSuccess }) => {
       type_golden: typeGolden,
       expire_date: expireDate,
     };
-
     try {
         const res = await fetch('/api/golden-samples/add-golden/', {
             method: 'POST',
@@ -40,12 +41,13 @@ const AddGoldenModal: React.FC<Props> = ({onClose, onSuccess }) => {
             body: JSON.stringify(payload),
           });
 
-      if (res.ok) {
-        onSuccess();
-        onClose();
-      } else {
-        console.error('Błąd dodawania');
-      }
+        if (res.ok) {
+          onSuccess();
+          onClose();
+        } else {
+          const errorData = await res.json();
+          setError(errorData.error || 'Wystąpił błąd');
+        }
     } catch (error) {
       console.error('Błąd sieci', error);
     }
@@ -56,10 +58,12 @@ const AddGoldenModal: React.FC<Props> = ({onClose, onSuccess }) => {
       <div className="modal">
         <h3>Dodaj Golden</h3>
         <form onSubmit={handleSubmit}>
-          <label>
-            Kod:
-            <input value={variant_code} onChange={(e) => setVariant(e.target.value)} />
-          </label>
+          {error && (
+            <div className="error-message">
+              {error}
+            </div>
+          )}
+
           <label>
             SN:
             <input value={sn} onChange={(e) => setSn(e.target.value)} required />
@@ -76,7 +80,12 @@ const AddGoldenModal: React.FC<Props> = ({onClose, onSuccess }) => {
 
           <label>
             Data wygaśnięcia:
-            <input type="date" value={expireDate} onChange={(e) => setExpireDate(e.target.value)} required />
+            <input
+              type="date"
+              value={expireDate}
+              onChange={(e) => setExpireDate(e.target.value)}
+              required
+            />
           </label>
 
           <div className="modal-buttons">

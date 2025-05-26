@@ -91,14 +91,3 @@
     transform: scale(1);
   }
 }
-
-
-.error-message {
-  background-color: #ffebee;
-  color: #c62828;
-  padding: 10px 14px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  font-weight: 500;
-  font-size: 0.95rem;
-}
