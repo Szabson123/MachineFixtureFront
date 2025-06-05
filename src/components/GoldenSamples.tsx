@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import "./golden-list.css";
 import AddGoldenModal from "./AddGoldenModal";
 import EditGoldenModal from "./EditGoldenModal";
@@ -46,6 +46,9 @@ const GoldenList: React.FC = () => {
   const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
 
+  const managedScrollRef = useRef<HTMLDivElement>(null);
+  const hasFetchedRef = useRef(false);
+
   const fetchVariants = useCallback((term: string = "") => {
     const url = `/api/golden-samples/variant/${term ? `?search=${encodeURIComponent(term)}` : ""}`;
     fetch(url)
@@ -64,12 +67,12 @@ const GoldenList: React.FC = () => {
       .catch((err) => console.error("Błąd pobierania wariantów:", err));
   }, [selectedVariantId]);
 
-  const managedScrollRef = React.useRef<HTMLDivElement>(null);
-
   const loadMoreGoldens = useCallback(() => {
-    if (!nextPageUrl || loadingMore) return;
-  
+    if (!nextPageUrl || loadingMore || hasFetchedRef.current) return;
+
+    hasFetchedRef.current = true;
     setLoadingMore(true);
+
     fetch(nextPageUrl)
       .then((res) => res.json())
       .then((json) => {
@@ -77,7 +80,10 @@ const GoldenList: React.FC = () => {
         setNextPageUrl(json.next);
       })
       .catch((err) => console.error("Błąd ładowania kolejnych goldenów:", err))
-      .finally(() => setLoadingMore(false));
+      .finally(() => {
+        setLoadingMore(false);
+        hasFetchedRef.current = false;
+      });
   }, [nextPageUrl, loadingMore]);
 
   const fetchGoldensForVariant = (variantId: number) => {
@@ -101,27 +107,32 @@ const GoldenList: React.FC = () => {
     const id = setTimeout(() => {
       fetchVariants(searchTerm);
       fetchManagedGoldens();
-    }, 300);
+    }, 100);
     return () => clearTimeout(id);
   }, [searchTerm, fetchVariants, fetchManagedGoldens]);
 
   useEffect(() => {
     const container = managedScrollRef.current;
     if (!container) return;
-  
+
+    let timeoutId: NodeJS.Timeout;
+
     const handleScroll = () => {
-      const bottomReached =
-        container.scrollTop + container.clientHeight >= container.scrollHeight - 100;
-  
-      if (bottomReached) {
-        loadMoreGoldens();
-      }
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        const scrollBuffer = 1100;
+        const bottomReached =
+          container.scrollTop + container.clientHeight >= container.scrollHeight - scrollBuffer;
+
+        if (bottomReached) {
+          loadMoreGoldens();
+        }
+      }, 100);
     };
-  
+
     container.addEventListener("scroll", handleScroll);
     return () => container.removeEventListener("scroll", handleScroll);
   }, [loadMoreGoldens]);
-
 
   const getGoldenTypeStyle = (type: string) => {
     switch (type.toLowerCase()) {
@@ -280,16 +291,17 @@ const GoldenList: React.FC = () => {
         />
       )}
 
-      {editingGolden && (
-        <EditGoldenModal
-          golden={editingGolden}
-          onClose={() => setEditingGolden(null)}
-          onSuccess={() => {
-            setEditingGolden(null);
-            fetchManagedGoldens();
-          }}
-        />
-      )}
+    {editingGolden && (
+      <EditGoldenModal
+        golden={editingGolden}
+        onClose={() => setEditingGolden(null)}
+        onSuccess={() => {
+          setEditingGolden(null);
+          if (selectedVariantId) fetchGoldensForVariant(selectedVariantId);
+          fetchManagedGoldens();
+        }}
+      />
+    )}
 
       {showVariantModal && (
         <AddVariantModal

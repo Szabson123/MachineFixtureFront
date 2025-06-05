@@ -55,7 +55,7 @@ const EditGoldenModal: React.FC<Props> = ({ golden, onClose, onSuccess }) => {
   const handleDelete = () => {
     if (!window.confirm("Czy na pewno chcesz usunąć ten wzorzec?")) return;
 
-    fetch(`/api/golden-samples/goldens/manage/${golden.id}/`, {
+    fetch(`/api/golden-samples/goldens/${golden.id}/`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
