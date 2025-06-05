@@ -12,16 +12,12 @@ type Golden = {
   counter?: number;
 };
 
-type Group = {
-  id: number;
-  name: string;
-};
-
 type Variant = {
+  id: number;
   code: string;
-  group: Group;
   name?: string;
-  goldens: Golden[];
+  group: number;
+  golden_count: number;
 };
 
 type ManagedGolden = {
@@ -38,45 +34,94 @@ type ManagedGolden = {
 
 const GoldenList: React.FC = () => {
   const [variants, setVariants] = useState<Variant[]>([]);
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
+  const [selectedVariantCode, setSelectedVariantCode] = useState<string | null>(null);
+  const [selectedGoldens, setSelectedGoldens] = useState<Golden[]>([]);
   const [managedGoldens, setManagedGoldens] = useState<ManagedGolden[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingGolden, setEditingGolden] = useState<ManagedGolden | null>(null);
   const [showVariantModal, setShowVariantModal] = useState(false);
 
-  const fetchData = useCallback(
-    (term: string = "") => {
-      const url = `/api/golden-samples/goldens-list${term ? `?search=${encodeURIComponent(term)}` : ""}`;
-      fetch(url)
-        .then((res) => res.json())
-        .then((json: Variant[]) => {
-          setVariants(json);
-          if (selectedCode && !json.some((v) => v.code === selectedCode)) {
-            setSelectedCode(null);
-          }
-        })
-        .catch((err) => console.error("Błąd pobierania:", err));
-    },
-    [selectedCode]
-  );
+  const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const fetchVariants = useCallback((term: string = "") => {
+    const url = `/api/golden-samples/variant/${term ? `?search=${encodeURIComponent(term)}` : ""}`;
+    fetch(url)
+      .then((res) => res.json())
+      .then((json: Variant[]) => {
+        setVariants(json);
+        if (
+          selectedVariantId &&
+          !json.some((v) => v.id === selectedVariantId)
+        ) {
+          setSelectedVariantId(null);
+          setSelectedVariantCode(null);
+          setSelectedGoldens([]);
+        }
+      })
+      .catch((err) => console.error("Błąd pobierania wariantów:", err));
+  }, [selectedVariantId]);
+
+  const managedScrollRef = React.useRef<HTMLDivElement>(null);
+
+  const loadMoreGoldens = useCallback(() => {
+    if (!nextPageUrl || loadingMore) return;
+  
+    setLoadingMore(true);
+    fetch(nextPageUrl)
+      .then((res) => res.json())
+      .then((json) => {
+        setManagedGoldens((prev) => [...prev, ...json.results]);
+        setNextPageUrl(json.next);
+      })
+      .catch((err) => console.error("Błąd ładowania kolejnych goldenów:", err))
+      .finally(() => setLoadingMore(false));
+  }, [nextPageUrl, loadingMore]);
+
+  const fetchGoldensForVariant = (variantId: number) => {
+    fetch(`/api/golden-samples/${variantId}/goldens/`)
+      .then((res) => res.json())
+      .then((data: Golden[]) => setSelectedGoldens(data))
+      .catch((err) => console.error("Błąd pobierania goldenów:", err));
+  };
 
   const fetchManagedGoldens = useCallback(() => {
-    fetch("/api/golden-samples/goldens/manage/")
+    fetch("/api/golden-samples/goldens/")
       .then((res) => res.json())
-      .then((json: ManagedGolden[]) => setManagedGoldens(json))
+      .then((json) => {
+        setManagedGoldens(json.results);
+        setNextPageUrl(json.next);
+      })
       .catch((err) => console.error("Błąd pobierania manage:", err));
   }, []);
 
   useEffect(() => {
-    fetchData();
-    fetchManagedGoldens();
-  }, [fetchData, fetchManagedGoldens]);
+    const id = setTimeout(() => {
+      fetchVariants(searchTerm);
+      fetchManagedGoldens();
+    }, 300);
+    return () => clearTimeout(id);
+  }, [searchTerm, fetchVariants, fetchManagedGoldens]);
 
   useEffect(() => {
-    const id = setTimeout(() => fetchData(searchTerm), 300);
-    return () => clearTimeout(id);
-  }, [searchTerm, fetchData]);
+    const container = managedScrollRef.current;
+    if (!container) return;
+  
+    const handleScroll = () => {
+      const bottomReached =
+        container.scrollTop + container.clientHeight >= container.scrollHeight - 100;
+  
+      if (bottomReached) {
+        loadMoreGoldens();
+      }
+    };
+  
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [loadMoreGoldens]);
+
 
   const getGoldenTypeStyle = (type: string) => {
     switch (type.toLowerCase()) {
@@ -91,7 +136,14 @@ const GoldenList: React.FC = () => {
     }
   };
 
-  const selectedGoldens = variants.find((v) => v.code === selectedCode)?.goldens ?? [];
+  const getExpireClass = (dateStr: string) => {
+    const today = new Date();
+    const expire = new Date(dateStr);
+    const diff = (expire.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+    if (diff < 0) return "expired";
+    if (diff <= 7) return "expiring-soon";
+    return "";
+  };
 
   return (
     <div className="golden-app">
@@ -101,7 +153,7 @@ const GoldenList: React.FC = () => {
           <div className="panel-header">
             <h3>Dostępne Warianty</h3>
             <button onClick={() => setShowVariantModal(true)} className="add-pattern-btn">
-            ➕ Dodaj wariant
+              ➕ Dodaj wariant
             </button>
           </div>
           <input
@@ -113,16 +165,20 @@ const GoldenList: React.FC = () => {
           <div className="list-container">
             {variants.map((variant) => (
               <div
-                key={variant.code}
-                className={`list-item ${selectedCode === variant.code ? "selected" : ""}`}
-                onClick={() => setSelectedCode(variant.code)}
+                key={variant.id}
+                className={`list-item ${selectedVariantId === variant.id ? "selected" : ""}`}
+                onClick={() => {
+                  setSelectedVariantId(variant.id);
+                  setSelectedVariantCode(variant.code);
+                  fetchGoldensForVariant(variant.id);
+                }}
               >
                 <div>
                   <span>
                     {variant.name ? `${variant.name}` : ""} -- {variant.code}
                   </span>
                 </div>
-                <span className="status blue">{variant.goldens.length} szt.</span>
+                <span className="status blue">{variant.golden_count} szt.</span>
               </div>
             ))}
           </div>
@@ -131,10 +187,10 @@ const GoldenList: React.FC = () => {
         {/* PANEL 2 – Goldeny dla wybranego wariantu */}
         <div className="panel">
           <div className="panel-header">
-            <h3>{selectedCode ? `Golden: ${selectedCode}` : "Goldeny"}</h3>
+            <h3>{selectedVariantCode ? `Golden: ${selectedVariantCode}` : "Goldeny"}</h3>
             <button
               onClick={() => {
-                if (!selectedCode) {
+                if (!selectedVariantId || !selectedVariantCode) {
                   alert("Najpierw wybierz wariant!");
                   return;
                 }
@@ -146,13 +202,17 @@ const GoldenList: React.FC = () => {
             </button>
           </div>
           <div className="list-container">
-            {!selectedCode ? (
+            {!selectedVariantId ? (
               <div className="empty-state centered-message">Wybierz wariant</div>
             ) : selectedGoldens.length === 0 ? (
               <div className="empty-state">Brak goldenów dla tego wariantu</div>
             ) : (
               selectedGoldens.map((golden) => (
-                <div key={golden.id} className="list-item">
+                <div
+                  key={golden.id}
+                  className="list-item"
+                  onClick={() => setEditingGolden(golden as ManagedGolden)}
+                >
                   <div className="golden-code-container">
                     <span
                       className={`status-icon ${getGoldenTypeStyle(golden.type_golden)}`}
@@ -163,7 +223,9 @@ const GoldenList: React.FC = () => {
                     </span>
                   </div>
                   <div className="expire-date">
-                    <span>{new Date(golden.expire_date).toLocaleDateString()}</span>
+                    <span className={getExpireClass(golden.expire_date)}>
+                      {new Date(golden.expire_date).toLocaleDateString()}
+                    </span>
                     {typeof golden.counter === "number" && (
                       <span className="counter-tag">{golden.counter}</span>
                     )}
@@ -174,12 +236,12 @@ const GoldenList: React.FC = () => {
           </div>
         </div>
 
-        {/* PANEL 3 – Wszystkie goldeny z /manage/ */}
+        {/* PANEL 3 – Wszystkie goldeny */}
         <div className="panel">
           <div className="panel-header">
             <h3>Wszystkie Wzorce</h3>
           </div>
-          <div className="list-container">
+          <div className="list-container" ref={managedScrollRef}>
             {managedGoldens.map((golden) => (
               <div key={golden.id} className="list-item" onClick={() => setEditingGolden(golden)}>
                 <div className="golden-code-container">
@@ -191,8 +253,10 @@ const GoldenList: React.FC = () => {
                     {golden.golden_code}
                   </span>
                 </div>
-                <div className="expire-date">
-                  <span>{new Date(golden.expire_date).toLocaleDateString()}</span>
+                <div className={`expire-date ${getExpireClass(golden.expire_date)}`}>
+                  <span>
+                    {new Date(golden.expire_date).toLocaleDateString()}
+                  </span>
                   <span className="counter-tag">{golden.counter}</span>
                 </div>
               </div>
@@ -204,13 +268,13 @@ const GoldenList: React.FC = () => {
         </div>
       </div>
 
-      {showModal && selectedCode && (
+      {showModal && selectedVariantCode && (
         <AddGoldenModal
-          variantCode={selectedCode}
+          variantCode={selectedVariantCode}
           onClose={() => setShowModal(false)}
           onSuccess={() => {
             setShowModal(false);
-            fetchData(searchTerm);
+            if (selectedVariantId) fetchGoldensForVariant(selectedVariantId);
             fetchManagedGoldens();
           }}
         />
@@ -227,15 +291,15 @@ const GoldenList: React.FC = () => {
         />
       )}
 
-        {showVariantModal && (
-          <AddVariantModal
-            onClose={() => setShowVariantModal(false)}
-            onSuccess={() => {
-              setShowVariantModal(false);
-              fetchData();
-            }}
-          />
-        )}
+      {showVariantModal && (
+        <AddVariantModal
+          onClose={() => setShowVariantModal(false)}
+          onSuccess={() => {
+            setShowVariantModal(false);
+            fetchVariants();
+          }}
+        />
+      )}
 
       <div className="footer-creditt">
         Created by Krzysztof Balcerzak & Szymon Żaba

@@ -1,6 +1,14 @@
 import React, { useState } from "react";
 import './EditGoldenModal.css';
 
+
+function getCookie(name: string): string {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()!.split(';').shift()!;
+  return '';
+}
+
 type Props = {
   golden: {
     id: number;
@@ -26,7 +34,9 @@ const EditGoldenModal: React.FC<Props> = ({ golden, onClose, onSuccess }) => {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken")
       },
+      credentials: "include",
       body: JSON.stringify({
         type_golden: typeGolden,
         expire_date: expireDate,
@@ -41,15 +51,17 @@ const EditGoldenModal: React.FC<Props> = ({ golden, onClose, onSuccess }) => {
       })
       .catch((err) => alert("Wystąpił błąd: " + err.message));
   };
-  
+
   const handleDelete = () => {
     if (!window.confirm("Czy na pewno chcesz usunąć ten wzorzec?")) return;
-  
+
     fetch(`/api/golden-samples/goldens/manage/${golden.id}/`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken")
       },
+      credentials: "include",
     })
       .then((res) => {
         if (!res.ok) throw new Error("Błąd podczas usuwania");
@@ -67,8 +79,11 @@ const EditGoldenModal: React.FC<Props> = ({ golden, onClose, onSuccess }) => {
         </button>
         <h2>Edytuj wzorzec</h2>
         <p><strong>SN:</strong> {golden.golden_code}</p>
-        <p><strong>Wariant:</strong> {golden.variant.name} ({golden.variant.code})</p>
-
+        {golden.variant && (
+          <p>
+            <strong>Wariant:</strong> {golden.variant.name} ({golden.variant.code})
+          </p>
+        )}
         <label>Typ:</label>
         <select value={typeGolden} onChange={(e) => setTypeGolden(e.target.value)}>
           <option value="good">Good</option>

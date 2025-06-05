@@ -1,5 +1,13 @@
 import React, { useState } from "react";
 import './AddVariantModal.css';
+
+function getCookie(name: string): string {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()!.split(';').shift()!;
+  return '';
+}
+
 type Props = {
   onClose: () => void;
   onSuccess: () => void;
@@ -15,9 +23,13 @@ const AddVariantModal: React.FC<Props> = ({ onClose, onSuccess }) => {
       return;
     }
 
-    fetch("/api/golden-samples/variant/manage/", {
+    fetch("/api/golden-samples/variant/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken")
+      },
+      credentials: "include",
       body: JSON.stringify({ code, name }),
     })
       .then((res) => {
@@ -30,7 +42,7 @@ const AddVariantModal: React.FC<Props> = ({ onClose, onSuccess }) => {
 
   return (
     <div className="modal-backdrop">
-    <div className="modal">
+      <div className="modal">
         <h2>Dodaj nowy wariant</h2>
 
         <label>Kod wariantu:</label>

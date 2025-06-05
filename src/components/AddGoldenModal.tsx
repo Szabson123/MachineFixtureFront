@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
 import './AddGoldenModal.css';
 
-function getCookie(name: string): string {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()!.split(';').shift()!;
-    return '';
-  }
-  
-  type Props = {
-    variantCode: string;
-    onClose: () => void;
-    onSuccess: () => void;
-  };
 
-  const AddGoldenModal: React.FC<Props> = ({ variantCode, onClose, onSuccess }) => {
+function getCookie(name: string): string {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()!.split(';').shift()!;
+  return '';
+}
+
+type Props = {
+  variantCode: string;
+  onClose: () => void;
+  onSuccess: () => void;
+};
+
+const AddGoldenModal: React.FC<Props> = ({ variantCode, onClose, onSuccess }) => {
   const [sn, setSn] = useState('');
   const [variant_code] = useState(variantCode);
   const [typeGolden, setTypeGolden] = useState('good');
@@ -30,26 +31,28 @@ function getCookie(name: string): string {
       type_golden: typeGolden,
       expire_date: expireDate,
     };
-    try {
-        const res = await fetch('/api/golden-samples/add-golden/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': getCookie('csrftoken'), // jeśli backend wymaga
-            },
-            credentials: 'include', // ← TO JEST KLUCZ!
-            body: JSON.stringify(payload),
-          });
 
-        if (res.ok) {
-          onSuccess();
-          onClose();
-        } else {
-          const errorData = await res.json();
-          setError(errorData.error || 'Wystąpił błąd');
-        }
+    try {
+      const res = await fetch('/api/golden-samples/add-golden/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        onSuccess();
+        onClose();
+      } else {
+        const errorData = await res.json();
+        setError(errorData.error || 'Wystąpił błąd');
+      }
     } catch (error) {
       console.error('Błąd sieci', error);
+      setError('Wystąpił błąd sieci');
     }
   };
 
