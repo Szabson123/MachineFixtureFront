@@ -24,14 +24,21 @@ const AddGoldenModal: React.FC<Props> = ({ variantCode, onClose, onSuccess }) =>
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
+    const password = prompt('Podaj hasło:');
+    if (!password) {
+      alert('Hasło jest wymagane');
+      return;
+    }
+  
     const payload = {
       sn,
-      variant_code: variant_code,
+      variant_code,
       type_golden: typeGolden,
       expire_date: expireDate,
+      password,
     };
-
+  
     try {
       const res = await fetch('/api/golden-samples/add-golden/', {
         method: 'POST',
@@ -42,7 +49,7 @@ const AddGoldenModal: React.FC<Props> = ({ variantCode, onClose, onSuccess }) =>
         credentials: 'include',
         body: JSON.stringify(payload),
       });
-
+  
       if (res.ok) {
         onSuccess();
         onClose();

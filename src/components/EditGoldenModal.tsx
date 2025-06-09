@@ -30,16 +30,23 @@ const EditGoldenModal: React.FC<Props> = ({ golden, onClose, onSuccess }) => {
   const [expireDate, setExpireDate] = useState(golden.expire_date);
 
   const handleSave = () => {
-    fetch(`/api/golden-samples/goldens/manage/${golden.id}/`, {
+    const password = prompt("Podaj hasło:");
+    if (!password) {
+      alert("Hasło jest wymagane");
+      return;
+    }
+
+    fetch(`/api/golden-samples/goldens/${golden.id}/`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken")
+        "X-CSRFToken": getCookie("csrftoken"),
       },
       credentials: "include",
       body: JSON.stringify({
         type_golden: typeGolden,
         expire_date: expireDate,
+        password,
       }),
     })
       .then((res) => {
@@ -54,14 +61,21 @@ const EditGoldenModal: React.FC<Props> = ({ golden, onClose, onSuccess }) => {
 
   const handleDelete = () => {
     if (!window.confirm("Czy na pewno chcesz usunąć ten wzorzec?")) return;
-
+  
+    const password = prompt("Podaj hasło:");
+    if (!password) {
+      alert("Hasło jest wymagane");
+      return;
+    }
+  
     fetch(`/api/golden-samples/goldens/${golden.id}/`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken")
+        "X-CSRFToken": getCookie("csrftoken"),
       },
       credentials: "include",
+      body: JSON.stringify({ password })
     })
       .then((res) => {
         if (!res.ok) throw new Error("Błąd podczas usuwania");

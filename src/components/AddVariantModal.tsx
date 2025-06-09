@@ -22,7 +22,13 @@ const AddVariantModal: React.FC<Props> = ({ onClose, onSuccess }) => {
       alert("Kod wariantu jest wymagany");
       return;
     }
-
+  
+    const password = prompt("Podaj hasło:");
+    if (!password) {
+      alert("Hasło jest wymagane");
+      return;
+    }
+  
     fetch("/api/golden-samples/variant/", {
       method: "POST",
       headers: {
@@ -30,13 +36,16 @@ const AddVariantModal: React.FC<Props> = ({ onClose, onSuccess }) => {
         "X-CSRFToken": getCookie("csrftoken")
       },
       credentials: "include",
-      body: JSON.stringify({ code, name }),
+      body: JSON.stringify({ code, name, password }),
     })
       .then((res) => {
         if (!res.ok) throw new Error("Nie udało się dodać wariantu");
         return res.json();
       })
-      .then(() => onSuccess())
+      .then(() => {
+        alert("Wariant dodany pomyślnie");
+        onSuccess();
+      })
       .catch((err) => alert(err.message));
   };
 

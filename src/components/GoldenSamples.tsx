@@ -39,6 +39,7 @@ const GoldenList: React.FC = () => {
   const [selectedGoldens, setSelectedGoldens] = useState<Golden[]>([]);
   const [managedGoldens, setManagedGoldens] = useState<ManagedGolden[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [searchSn, setSearchSn] = useState<string>("");
   const [showModal, setShowModal] = useState(false);
   const [editingGolden, setEditingGolden] = useState<ManagedGolden | null>(null);
   const [showVariantModal, setShowVariantModal] = useState(false);
@@ -67,24 +68,62 @@ const GoldenList: React.FC = () => {
       .catch((err) => console.error("Błąd pobierania wariantów:", err));
   }, [selectedVariantId]);
 
+  const fetchInitialGoldens = useCallback(() => {
+    fetch("/api/golden-samples/goldens/")
+      .then((res) => res.json())
+      .then((json) => {
+        setManagedGoldens(json.results);
+        if (json.next) {
+          const parsedUrl = new URL(json.next);
+          setNextPageUrl(parsedUrl.pathname + parsedUrl.search);
+        } else {
+          setNextPageUrl(null);
+        }
+      })
+      .catch((err) => console.error("Błąd pobierania manage:", err));
+  }, []);
+  
+  const fetchGoldensWithSearch = useCallback((searchValue: string) => {
+    const url = `/api/golden-samples/goldens/?search=${encodeURIComponent(searchValue)}`;
+    fetch(url)
+      .then((res) => res.json())
+      .then((json) => {
+        setManagedGoldens(json.results);
+        if (json.next) {
+          const parsedUrl = new URL(json.next);
+          setNextPageUrl(parsedUrl.pathname + parsedUrl.search);
+        } else {
+          setNextPageUrl(null);
+        }
+      })
+      .catch((err) => console.error("Błąd pobierania z filtrem:", err));
+  }, []);
+  
   const loadMoreGoldens = useCallback(() => {
     if (!nextPageUrl || loadingMore || hasFetchedRef.current) return;
-
+  
     hasFetchedRef.current = true;
     setLoadingMore(true);
-
-    fetch(nextPageUrl)
+  
+    const url = `${nextPageUrl}${searchSn ? `&search=${encodeURIComponent(searchSn)}` : ""}`;
+  
+    fetch(url)
       .then((res) => res.json())
       .then((json) => {
         setManagedGoldens((prev) => [...prev, ...json.results]);
-        setNextPageUrl(json.next);
+        if (json.next) {
+          const parsedUrl = new URL(json.next);
+          setNextPageUrl(parsedUrl.pathname + parsedUrl.search);
+        } else {
+          setNextPageUrl(null);
+        }
       })
       .catch((err) => console.error("Błąd ładowania kolejnych goldenów:", err))
       .finally(() => {
         setLoadingMore(false);
         hasFetchedRef.current = false;
       });
-  }, [nextPageUrl, loadingMore]);
+  }, [nextPageUrl, loadingMore, searchSn]);
 
   const fetchGoldensForVariant = (variantId: number) => {
     fetch(`/api/golden-samples/${variantId}/goldens/`)
@@ -93,23 +132,20 @@ const GoldenList: React.FC = () => {
       .catch((err) => console.error("Błąd pobierania goldenów:", err));
   };
 
-  const fetchManagedGoldens = useCallback(() => {
-    fetch("/api/golden-samples/goldens/")
-      .then((res) => res.json())
-      .then((json) => {
-        setManagedGoldens(json.results);
-        setNextPageUrl(json.next);
-      })
-      .catch((err) => console.error("Błąd pobierania manage:", err));
-  }, []);
-
   useEffect(() => {
     const id = setTimeout(() => {
       fetchVariants(searchTerm);
-      fetchManagedGoldens();
+      if (!searchSn) fetchInitialGoldens();
     }, 100);
     return () => clearTimeout(id);
-  }, [searchTerm, fetchVariants, fetchManagedGoldens]);
+  }, [searchTerm, fetchVariants, fetchInitialGoldens, searchSn]);
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      if (searchSn) fetchGoldensWithSearch(searchSn);
+    }, 100);
+    return () => clearTimeout(id);
+  }, [searchSn, fetchGoldensWithSearch]);
 
   useEffect(() => {
     const container = managedScrollRef.current;
@@ -252,6 +288,12 @@ const GoldenList: React.FC = () => {
           <div className="panel-header">
             <h3>Wszystkie Wzorce</h3>
           </div>
+          <input
+            className="search-input"
+            placeholder="Szukaj po SN..."
+            value={searchSn}
+            onChange={(e) => setSearchSn(e.target.value)}
+          />
           <div className="list-container" ref={managedScrollRef}>
             {managedGoldens.map((golden) => (
               <div key={golden.id} className="list-item" onClick={() => setEditingGolden(golden)}>
@@ -286,22 +328,22 @@ const GoldenList: React.FC = () => {
           onSuccess={() => {
             setShowModal(false);
             if (selectedVariantId) fetchGoldensForVariant(selectedVariantId);
-            fetchManagedGoldens();
+            fetchInitialGoldens();
           }}
         />
       )}
 
-    {editingGolden && (
-      <EditGoldenModal
-        golden={editingGolden}
-        onClose={() => setEditingGolden(null)}
-        onSuccess={() => {
-          setEditingGolden(null);
-          if (selectedVariantId) fetchGoldensForVariant(selectedVariantId);
-          fetchManagedGoldens();
-        }}
-      />
-    )}
+      {editingGolden && (
+        <EditGoldenModal
+          golden={editingGolden}
+          onClose={() => setEditingGolden(null)}
+          onSuccess={() => {
+            setEditingGolden(null);
+            if (selectedVariantId) fetchGoldensForVariant(selectedVariantId);
+            fetchInitialGoldens();
+          }}
+        />
+      )}
 
       {showVariantModal && (
         <AddVariantModal
