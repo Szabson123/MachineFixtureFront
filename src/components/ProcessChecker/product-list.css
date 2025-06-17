@@ -1,0 +1,136 @@
+/* product-list.css */
+.back{
+    background-color: #f3f4f6;
+}
+.product-list {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-top: 10px;
+  }
+  
+  .panel {
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+  
+  .panel-header-process {
+    color: #000000;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+    margin-bottom: 20px;
+  }
+  
+  .panel-header-process::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(0,0,0,0) 0%, #6b73ff 50%, rgba(0,0,0,0) 100%);
+  }
+  
+  .panel-header-process h3 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 600;
+    color: #343a40;
+  }
+  
+  .grid-container {
+    display: grid;
+    grid-template-columns: repeat(minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px;
+  }
+  
+  .grid-item {
+    transition: transform 0.2s ease;
+  }
+  
+  .grid-item:hover {
+    transform: translateY(-5px);
+  }
+  
+  .square {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+    cursor: pointer;
+  }
+  
+  .square:hover {
+    background-color: #e9f5ff;
+    box-shadow: 0 5px 15px rgba(0, 13, 255, 0.1);
+    border-color: #6b73ff;
+  }
+  
+  .product-name {
+    font-weight: 500;
+    color: #343a40;
+    word-break: break-word;
+    font-size: 1.5rem;
+  }
+  
+  .loading, .error, .empty-state {
+    padding: 20px;
+    text-align: center;
+    font-size: 1rem;
+    color: #6c757d;
+  }
+  
+  .loading {
+    color: #0d6efd;
+  }
+  
+  .error {
+    color: #dc3545;
+  }
+  
+  .empty-state {
+    padding: 40px 20px;
+    font-style: italic;
+  }
+  
+  /* Responsywność */
+  @media (max-width: 768px) {
+    .grid-container {
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 15px;
+      padding: 15px;
+    }
+    
+    .square {
+      height: 100px;
+      padding: 15px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .grid-container {
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 10px;
+      padding: 10px;
+    }
+    
+    .product-list {
+      padding: 10px;
+    }
+    
+    .panel-header-process h3 {
+      font-size: 1.2rem;
+    }
+  }
