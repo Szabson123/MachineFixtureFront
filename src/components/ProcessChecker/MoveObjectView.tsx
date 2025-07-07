@@ -2,6 +2,21 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./ProcessAddView.css";
 
+
+const formatDate = (dateStr: string) =>
+  new Date(dateStr).toLocaleDateString('pl-PL');
+
+const formatDateTime = (dateStr: string) =>
+  new Date(dateStr).toLocaleString('pl-PL');
+
+
+function getCookie(name: string): string {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()!.split(';').shift()!;
+  return '';
+}
+
 interface ProductObject {
   id: number;
   serial_number: string;
@@ -11,6 +26,9 @@ interface ProductObject {
   exp_date_in_process?: string;
   current_place?: string | null;
   initial_who_entry: string;
+  quranteen_time?: string | null;
+  is_mother?: boolean;
+  full_sn?: string;
 }
 
 const MoveObjectView: React.FC = () => {
@@ -19,16 +37,55 @@ const MoveObjectView: React.FC = () => {
   const userId = localStorage.getItem("userIdentifier") || "";
   const navigate = useNavigate();
 
+  const [expandedMotherId, setExpandedMotherId] = useState<number | null>(null);
+  const [childrenMap, setChildrenMap] = useState<Record<number, ProductObject[]>>({});
+  const [motherFullSn, setMotherFullSn] = useState("");
+  const [motherShortSn, setMotherShortSn] = useState("");
+
   const [objectsInTransit, setObjectsInTransit] = useState<ProductObject[]>([]);
   const [showModal, setShowModal] = useState(true);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const fullSnInputRef = useRef<HTMLInputElement>(null);
+  const childInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     full_sn: "",
     who_exit: userId,
   });
+
+  const [showAddChildModal, setShowAddChildModal] = useState(false);
+  const [childSn, setChildSn] = useState("");
+
+  const handleMotherClick = async (obj: ProductObject) => {
+    const motherId = obj.id;
+  
+    if (expandedMotherId === motherId) {
+      setExpandedMotherId(null);
+      setShowAddChildModal(false);
+      return;
+    }
+  
+    setExpandedMotherId(motherId);
+    setMotherFullSn(obj.full_sn || obj.serial_number);
+    setMotherShortSn(obj.serial_number);
+    setShowAddChildModal(true);
+  
+    try {
+      const response = await fetch(`/api/process/${productId}/product-objects/${motherId}/children/`);
+      if (!response.ok) throw new Error("Błąd podczas pobierania dzieci kartonu");
+  
+      const data = await response.json();
+      setChildrenMap(prev => ({ ...prev, [motherId]: data }));
+    } catch (error) {
+      console.error(error);
+      setErrorMessage("Nie udało się pobrać zawartości kartonu.");
+      setShowErrorModal(true);
+    }
+  };
+  
 
   useEffect(() => {
     fetch(`/api/process/${productId}/product-objects/?current_process=${selectedProcess.id}&place_isnull=true`)
@@ -43,6 +100,37 @@ const MoveObjectView: React.FC = () => {
     }
   }, [showModal]);
 
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowErrorModal(false);
+        setShowModal(false);
+        setShowAddChildModal(false);
+      }
+    };
+  
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, []);
+
+  useEffect(() => {
+    if (expandedMotherId === null) return;
+  
+    const fetchChildren = async () => {
+      try {
+        const response = await fetch(`/api/process/${productId}/product-objects/${expandedMotherId}/children/`);
+        if (!response.ok) throw new Error("Błąd podczas odświeżania dzieci kartonu");
+        const data = await response.json();
+        setChildrenMap(prev => ({ ...prev, [expandedMotherId]: data }));
+      } catch (err) {
+        console.error("Błąd odświeżania dzieci:", err);
+      }
+    };
+  
+    fetchChildren();
+  
+  }, [expandedMotherId, productId]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const { full_sn, who_exit } = formData;
@@ -55,11 +143,24 @@ const MoveObjectView: React.FC = () => {
     try {
       const response = await fetch(`/api/process/product-object/move/${selectedProcess.id}/`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie('csrftoken'),
+        },
+        credentials: 'include',
         body: JSON.stringify({ full_sn, who_exit }),
       });
 
+      const result = await response.json(); // 🔧
+
       if (response.ok) {
+        if (result?.show_add_child_modal) {
+          setMotherFullSn(formData.full_sn);
+          setMotherShortSn(result?.serial_number || "Nieznany");
+          setShowAddChildModal(true);
+          return;
+        }
+
         setFormData({
           full_sn: "",
           who_exit: userId,
@@ -69,21 +170,28 @@ const MoveObjectView: React.FC = () => {
         setTimeout(() => setShowSuccessToast(false), 3000);
         setTimeout(() => fullSnInputRef.current?.focus(), 0);
 
-        // Odśwież tabelę
         fetch(`/api/process/${productId}/product-objects/?current_process=${selectedProcess.id}&place_isnull=true`)
           .then((res) => res.json())
           .then((data) => setObjectsInTransit(data));
       } else {
-        alert("Błąd podczas przenoszenia obiektu.");
+        let backendError = "Wystąpił błąd podczas przenoszenia.";
+        if (typeof result?.error === "string") backendError = result.error;
+        else if (typeof result?.detail === "string") backendError = result.detail;
+        else if (typeof result?.message === "string") backendError = result.message;
+        else if (Array.isArray(result?.errors)) backendError = result.errors.join("\n");
+
+        setErrorMessage(backendError);
+        setShowErrorModal(true);
       }
     } catch (err) {
-      alert("Błąd sieci.");
+      setErrorMessage("Błąd sieci. Nie można połączyć się z serwerem.");
+      setShowErrorModal(true);
     }
   };
 
   return (
     <div className="fixture-table-container">
-      <h2 className="table-title">Przenieś obiekt z: {selectedProcess.name}</h2>
+      <h2 className="table-title-process">{selectedProcess.name}</h2>
       <p className="progress-label">
         <button onClick={() => navigate(`/process/${productId}/process-action`)} className="back-button">
           &larr; Powrót
@@ -101,9 +209,10 @@ const MoveObjectView: React.FC = () => {
         <table className="fixtures-table">
           <thead>
             <tr>
+              <th>Typ</th>
               <th>Serial Number</th>
               <th>Data Dodania</th>
-              <th>Data Produkcji</th>
+              <th>{objectsInTransit[0]?.quranteen_time ? "Data Kwarantanny" : "Data Produkcji"}</th>
               <th>Data Ważności</th>
               <th>Wprowadził</th>
             </tr>
@@ -111,21 +220,53 @@ const MoveObjectView: React.FC = () => {
           <tbody>
             {objectsInTransit.length > 0 ? (
               objectsInTransit.map((obj) => (
-                <tr key={obj.id}>
-                  <td>{obj.serial_number}</td>
-                  <td>{new Date(obj.created_at).toLocaleString()}</td>
-                  <td>{obj.production_date}</td>
-                  <td>
-                    {obj.exp_date_in_process
-                      ? new Date(obj.exp_date_in_process).toLocaleDateString()
-                      : new Date(obj.expire_date).toLocaleDateString()}
-                  </td>
-                  <td>{obj.initial_who_entry}</td>
-                </tr>
+                <React.Fragment key={obj.id}>
+                  <tr
+                    onClick={() => obj.is_mother && handleMotherClick(obj)}
+                    style={{
+                      cursor: obj.is_mother ? "pointer" : "default",
+                      backgroundColor: obj.is_mother ? "#f0f9ff" : "inherit",
+                    }}
+                  >
+                    <td>{obj.is_mother ? "Karton" : "Produkt"}</td>
+                    <td>{obj.serial_number}</td>
+                    <td>{formatDateTime(obj.created_at)}</td>
+                    <td>{obj.quranteen_time ? formatDateTime(obj.quranteen_time) : formatDate(obj.production_date)}</td>
+                    <td>{obj.exp_date_in_process ? formatDate(obj.exp_date_in_process) : formatDate(obj.expire_date)}</td>
+                    <td>{obj.initial_who_entry}</td>
+                  </tr>
+
+                  {expandedMotherId === obj.id && childrenMap[obj.id] && (
+                    <tr>
+                      <td colSpan={6}>
+                        <table className="child-table">
+                          <thead>
+                            <tr>
+                              <th>Serial</th>
+                              <th>Data Dodania</th>
+                              <th>Data Kwarantanny</th>
+                              <th>Data Ważności</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                          {childrenMap[obj.id].map((child) => (
+                            <tr key={child.id}>
+                              <td>{child.serial_number}</td>
+                              <td>{formatDateTime(child.created_at)}</td>
+                              <td>{child.quranteen_time ? formatDateTime(child.quranteen_time) : formatDate(child.production_date)}</td>
+                              <td>{formatDate(child.exp_date_in_process ?? child.expire_date)}</td>
+                            </tr>
+                          ))}
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="italic-muted">Brak obiektów do przeniesienia.</td>
+                <td colSpan={6} className="italic-muted">Brak obiektów do przeniesienia.</td>
               </tr>
             )}
           </tbody>
@@ -172,7 +313,107 @@ const MoveObjectView: React.FC = () => {
         </div>
       )}
 
+      {/* 🔧 MODAL DODAWANIA DZIECI */}
+      {showAddChildModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3 className="table-title">Dodaj produkty do kartonu</h3>
+            <p className="progress-label">Karton: <span className="text-highlight">{motherShortSn}</span></p>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                const res = await fetch("/api/process/quick-add-child/", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie('csrftoken'),
+                  },
+                  credentials: "include",
+                  body: JSON.stringify({
+                    full_sn: childSn,
+                    mother_sn: motherFullSn,
+                    who_entry: userId,
+                  }),
+                });
+
+                if (res.ok) {
+                  setChildSn("");
+                  setShowSuccessToast(true);
+                  setTimeout(() => setShowSuccessToast(false), 2000);
+                  setTimeout(() => childInputRef.current?.focus(), 0);
+                
+                  try {
+                    const childrenRes = await fetch(`/api/process/${productId}/product-objects/${expandedMotherId}/children/`);
+                    if (childrenRes.ok) {
+                      const childrenData = await childrenRes.json();
+                      setChildrenMap(prev => ({
+                        ...prev,
+                        [expandedMotherId!]: childrenData,
+                      }));
+                    }
+                  } catch (err) {
+                    console.error("Błąd odświeżania dzieci:", err);
+                  }
+                } else {
+                  const err = await res.json().catch(() => ({}));
+                  const msg =
+                    err?.error ||
+                    err?.detail ||
+                    err?.message ||
+                    (Array.isArray(err?.errors) ? err.errors.join("\n") : null) ||
+                    "Błąd dodawania dziecka.";
+                  setErrorMessage(msg);
+                  setShowErrorModal(true);
+                }
+              } catch {
+                setErrorMessage("Błąd sieci podczas dodawania dziecka.");
+                setShowErrorModal(true);
+              }
+            }}>
+              <label>
+                Pełny SN dziecka:
+                <input
+                  type="text"
+                  ref={childInputRef}
+                  value={childSn}
+                  onChange={(e) => setChildSn(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </label>
+
+              <div style={{ marginTop: "1rem" }}>
+                <button type="submit" className="button-reset">Dodaj</button>
+                <button
+                  type="button"
+                  className="button-reset"
+                  style={{ backgroundColor: "#fca5a5", color: "#991b1b", marginLeft: "1rem" }}
+                  onClick={() => setShowAddChildModal(false)}
+                >
+                  Zamknij
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {showSuccessToast && <div className="toast-success">✅ Obiekt został przeniesiony!</div>}
+
+      {showErrorModal && (
+        <div className="modal-overlay active">
+          <div className="modal">
+            <h2>Błąd przetwarzania danych</h2>
+            <p>{errorMessage}</p>
+            <div className="modal-buttons">
+              <button className="btn btn-ack" onClick={() => setShowErrorModal(false)}>
+                Zrozumiano
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-.modal-backdrop {
+.add-variant-backdrop {
   position: fixed;
   top: 0;
   left: 0;
@@ -12,32 +12,35 @@
   z-index: 1000;
 }
 
-.modal {
-  background: #fff;
-  border-radius: 16px;
-  padding: 24px 32px;
-  max-width: 480px;
-  width: 100%;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
-  animation: fadeIn 0.3s ease-out;
+.add-variant-modal {
+  position: relative;
+  background: white;
+  border-radius: 8px;
+  width: 500px;
+  max-width: 90vw;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.modal h3 {
+.add-variant-modal h3 {
   margin-top: 0;
   margin-bottom: 20px;
   font-size: 1.4rem;
   color: #333;
 }
 
-.modal label {
+.add-variant-modal label {
   display: block;
   margin-bottom: 12px;
   font-size: 0.95rem;
   color: #444;
 }
 
-.modal input,
-.modal select {
+.add-variant-modal input,
+.add-variant-modal select {
   width: 100%;
   padding: 10px 12px;
   margin-top: 6px;
@@ -90,4 +93,13 @@
     opacity: 1;
     transform: scale(1);
   }
+}
+
+.add-variant-modal input[type="date"] {
+  min-width: 0;
+}
+
+.add-variant-modal input,
+.add-variant-modal select {
+  box-sizing: border-box;
 }

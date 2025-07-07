@@ -64,8 +64,8 @@ const AddGoldenModal: React.FC<Props> = ({ variantCode, onClose, onSuccess }) =>
   };
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal">
+    <div className="add-variant-backdrop">
+      <div className="add-variant-modal">
         <h3>Dodaj Golden</h3>
         <form onSubmit={handleSubmit}>
           {error && (

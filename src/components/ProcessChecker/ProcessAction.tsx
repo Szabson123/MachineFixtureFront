@@ -77,17 +77,25 @@ const ProcessAction: React.FC = () => {
           <h3>Wybierz akcję dla: {selectedProcess.name}</h3>
         </div>
 
-        <div className="action-buttons">
-          <div className="action-button add-button" onClick={() => handleAction("add")}>
-            <h3>Dodaj</h3>
-            <p>Dodaj Produkt do procesu (input)</p>
-          </div>
+        <div
+  className="action-buttons"
+  style={{
+    justifyContent: "center",
+    gap: "2rem",
+  }}
+>
+  <div className="action-button add-button" onClick={() => handleAction("add")}>
+    <h3>Dodaj</h3>
+    <p>Dodaj Produkt do procesu (input)</p>
+  </div>
 
-          <div className="action-button remove-button" onClick={() => handleAction("remove")}>
-            <h3>Pobierz</h3>
-            <p>Pobierz Produkt z tego procesu (output)</p>
-          </div>
-        </div>
+  {!selectedProcess.ending_process && (
+    <div className="action-button remove-button" onClick={() => handleAction("remove")}>
+      <h3>Pobierz</h3>
+      <p>Pobierz Produkt z tego procesu (output)</p>
+    </div>
+  )}
+</div>
       </div>
 
       {/* Modal */}

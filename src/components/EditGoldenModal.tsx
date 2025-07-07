@@ -86,8 +86,8 @@ const EditGoldenModal: React.FC<Props> = ({ golden, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal">
+    <div className="add-variant-backdrop">
+      <div className="add-variant-modal">
         <button className="delete-button" onClick={handleDelete} title="Usuń wzorzec">
           🗑
         </button>

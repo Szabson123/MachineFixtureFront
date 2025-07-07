@@ -50,8 +50,8 @@ const AddVariantModal: React.FC<Props> = ({ onClose, onSuccess }) => {
   };
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal">
+    <div className="add-variant-backdrop">
+      <div className="add-variant-modal">
         <h2>Dodaj nowy wariant</h2>
 
         <label>Kod wariantu:</label>
