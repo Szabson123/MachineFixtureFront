@@ -1,0 +1,97 @@
+/* src/nodes/NodesComp.css */
+
+.node {
+    width: 120px;
+    height: 120px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    flex-direction: column;
+    position: relative;
+    border: 2px solid #999;
+    text-align: center;
+  }
+  
+  .green {
+    background-color: #d0f5d0;
+    border-color: #66bb6a;
+  }
+  
+  .red {
+    background-color: #f8d7da;
+    border-color: #dc3545;
+  }
+
+  .orange{
+    background-color: #ffce84;
+    border-color: #ffa51d;
+    color: #7a3f00;
+  }
+
+  .blue{
+    background-color: #bceaff;
+    border-color: #12a0ff;
+    color: #0960e2;
+  }
+  .handle-input,
+  .handle-output {
+    width: 7px;
+    height: 7px;
+  }
+
+  .handle-red {
+    background: #dc3545;
+  }
+
+  .handle-input-red {
+    background: #ff2407;
+  }
+  
+  .handle-output-red {
+    background: #921414;
+  }
+  
+  .handle-input {
+    background: #4caf50;
+  }
+  
+  .handle-output {
+    background: #388e3c;
+  }
+
+  .handle-input-orange{
+    background: #ff7300;
+  }
+  
+  .handle-output-orange{
+    background: #ff7300;
+  }
+
+  .handle-input-blue{
+    background: #0960e2;
+  }
+  
+  .handle-output-blue{
+    background: #0960e2;
+  }
+
+  .node-input {
+    width: 80%;
+    font-size: 14px;
+    padding: 2px 4px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    background: #fff;
+  }
+
+  .diamond .handle-corner-top-left {
+    top: -5px;
+    left: -5px;
+  }
+  
+  .diamond .handle-corner-bottom-right {
+    bottom: -5px;
+    right: -5px;
+  }

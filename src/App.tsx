@@ -6,6 +6,7 @@ import ProductList from './components/ProcessChecker/ProductList';
 import ProductProcesses from './components/ProcessChecker/ProductProcesses';
 import ProcessAction from './components/ProcessChecker/ProcessAction';
 import ProcessActionRouter from './views/ProcessActionRouter'; 
+import FlowEditor from './components/ProcessNewGen/FlowProcess';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/process/:productId" element={<ProductProcesses />} />
         <Route path="/process/:productId/process-action" element={<ProcessAction />} />
         <Route path="/process/:productId/process-action/:actionType" element={<ProcessActionRouter />} />
+        <Route path="/new-flow" element={<FlowEditor />} />
       </Routes>
     </Router>
   );

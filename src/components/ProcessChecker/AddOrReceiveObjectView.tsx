@@ -2,13 +2,11 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./ProcessAddView.css";
 
-
 const formatDate = (dateStr: string) =>
-  new Date(dateStr).toLocaleDateString('pl-PL');
+  new Date(dateStr).toLocaleDateString("pl-PL");
 
 const formatDateTime = (dateStr: string) =>
-  new Date(dateStr).toLocaleString('pl-PL');
-
+  new Date(dateStr).toLocaleString("pl-PL");
 
 function getCookie(name: string): string {
   const value = `; ${document.cookie}`;
@@ -44,10 +42,17 @@ const AddOrReceiveObjectView: React.FC<Props> = ({ endpointType }) => {
   const [childrenMap, setChildrenMap] = useState<Record<number, ProductObject[]>>({});
 
   const [productObjects, setProductObjects] = useState<ProductObject[]>([]);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
+  const loaderRef = useRef<HTMLDivElement | null>(null);
+
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [showModal, setShowModal] = useState(true);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const [showChangePlaceModal, setShowChangePlaceModal] = useState(false);
+  const [placeForm, setPlaceForm] = useState({obj_full_sn: "", place_name: "",});
 
   const fullSnInputRef = useRef<HTMLInputElement>(null);
 
@@ -57,14 +62,33 @@ const AddOrReceiveObjectView: React.FC<Props> = ({ endpointType }) => {
     who_entry: userId,
   });
 
-  const fetchUrl = `/api/process/${productId}/product-objects/?current_process=${selectedProcess.id}&place_isnull=false`;
+  const baseUrl = `/api/process/${productId}/product-objects/?current_process=${selectedProcess.id}&place_isnull=false`;
+
+  const normalizeUrl = (url: string) => {
+    try {
+      const parsed = new URL(url);
+      return parsed.pathname + parsed.search;
+    } catch {
+      return url;
+    }
+  };
+  
+  const fetchObjects = async (url: string, append = false) => {
+    try {
+      const normalizedUrl = normalizeUrl(url);
+      const response = await fetch(normalizedUrl);
+      const data = await response.json();
+  
+      setProductObjects((prev) => (append ? [...prev, ...data.results] : data.results));
+      setNextPageUrl(data.next);
+      setTotalCount(data.count);
+    } catch (err) {
+    }
+  };
 
   useEffect(() => {
-    fetch(fetchUrl)
-      .then((res) => res.json())
-      .then((data) => setProductObjects(data))
-      .catch(() => {});
-  }, [fetchUrl]);
+    fetchObjects(baseUrl);
+  }, [baseUrl]);
 
   useEffect(() => {
     if (showModal && fullSnInputRef.current) {
@@ -72,22 +96,39 @@ const AddOrReceiveObjectView: React.FC<Props> = ({ endpointType }) => {
     }
   }, [showModal]);
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && nextPageUrl) {
+          fetchObjects(nextPageUrl, true);
+        }
+      },
+      { rootMargin: "100px" }
+    );
+
+    if (loaderRef.current) observer.observe(loaderRef.current);
+    return () => {
+      if (loaderRef.current) observer.unobserve(loaderRef.current);
+    };
+  }, [nextPageUrl]);
+
   const handleMotherClick = async (motherId: number) => {
     if (expandedMotherId === motherId) {
       setExpandedMotherId(null);
       return;
     }
-  
+
     setExpandedMotherId(motherId);
-  
+
     if (childrenMap[motherId]) return;
-  
+
     try {
       const response = await fetch(`/api/process/${productId}/product-objects/${motherId}/children/`);
       if (!response.ok) throw new Error("Błąd podczas pobierania dzieci kartonu");
-  
+
       const data = await response.json();
-      setChildrenMap(prev => ({ ...prev, [motherId]: data }));
+      setChildrenMap((prev) => ({ ...prev, [motherId]: data }));
     } catch (error) {
       console.error(error);
       alert("Nie udało się pobrać zawartości kartonu.");
@@ -171,9 +212,9 @@ const AddOrReceiveObjectView: React.FC<Props> = ({ endpointType }) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-CSRFToken": getCookie('csrftoken'),
+          "X-CSRFToken": getCookie("csrftoken"),
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 
@@ -188,9 +229,7 @@ const AddOrReceiveObjectView: React.FC<Props> = ({ endpointType }) => {
         setTimeout(() => setShowSuccessToast(false), 3000);
         setTimeout(() => fullSnInputRef.current?.focus(), 0);
 
-        fetch(fetchUrl)
-          .then((res) => res.json())
-          .then((data) => setProductObjects(data));
+        fetchObjects(baseUrl);
       } else {
         let backendError = "Wystąpił błąd podczas zapisu.";
         try {
@@ -200,14 +239,12 @@ const AddOrReceiveObjectView: React.FC<Props> = ({ endpointType }) => {
             errorData?.detail ||
             errorData?.message ||
             (Array.isArray(errorData?.errors) ? errorData.errors.join("\n") : backendError);
-        } catch {
-          // fallback: nie udało się sparsować JSON-a z błędem
-        }
+        } catch {}
 
         setErrorMessage(backendError);
         setShowErrorModal(true);
       }
-    } catch (err) {
+    } catch {
       setErrorMessage("Błąd sieci. Nie można połączyć się z serwerem.");
       setShowErrorModal(true);
     }
@@ -232,11 +269,27 @@ const AddOrReceiveObjectView: React.FC<Props> = ({ endpointType }) => {
       <p className="progress-label">
         Zalogowany użytkownik: <span className="text-highlight">{userId}</span>
       </p>
-      <button className="button-reset" onClick={() => setShowModal(true)} style={{ margin: "1rem 0" }}>
-        + {endpointType === "add" ? "Dodaj" : "Odbierz"} nowy
-      </button>
+      <div className="button-row">
+        <div className="action-buttons-row">
+          <button className="button-reset" onClick={() => setShowModal(true)}>
+            + Dodaj nowy
+          </button>
+          <button
+            className="button-reset"
+            onClick={() => setShowChangePlaceModal(true)}
+            style={{ marginLeft: "0.75rem" }}
+          >
+            🛠 Przenieś
+          </button>
+        </div>
+      </div>
 
       <div className="table-wrapper">
+        <div className="table-meta">
+          {totalCount !== null && (
+            <span className="count-label">Liczba produktów: {totalCount}</span>
+          )}
+        </div>
         <table className="fixtures-table">
           <thead>
             <tr>
@@ -319,7 +372,8 @@ const AddOrReceiveObjectView: React.FC<Props> = ({ endpointType }) => {
               </tr>
             )}
           </tbody>
-        </table>
+          </table>
+          <div ref={loaderRef} style={{ height: "40px" }} />
       </div>
 
       {showModal && (
@@ -372,6 +426,89 @@ const AddOrReceiveObjectView: React.FC<Props> = ({ endpointType }) => {
           </div>
         </div>
       )}
+      {showChangePlaceModal && (
+  <div className="modal-overlay">
+    <div className="modal-content">
+      <h3 className="table-title">Zmień miejsce obiektu</h3>
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          try {
+            const response = await fetch(
+              `/api/process/${productId}/product-objects/change-place-by-sn/`,
+              {
+                method: "PATCH",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-CSRFToken": getCookie("csrftoken"),
+                },
+                credentials: "include",
+                body: JSON.stringify(placeForm),
+              }
+            );
+
+            const data = await response.json();
+
+            if (response.ok) {
+              setPlaceForm({ obj_full_sn: "", place_name: "" });
+              setShowChangePlaceModal(false);
+              setShowSuccessToast(true);
+              setTimeout(() => setShowSuccessToast(false), 3000);
+              fetchObjects(baseUrl); // Odśwież dane
+            } else {
+              const backendError =
+                data?.error ||
+                data?.detail ||
+                data?.message ||
+                (Array.isArray(data?.errors) ? data.errors.join("\n") : "Błąd podczas zmiany miejsca.");
+
+              setErrorMessage(backendError);
+              setShowErrorModal(true);
+            }
+          } catch {
+            setErrorMessage("Błąd sieci. Nie udało się połączyć z serwerem.");
+            setShowErrorModal(true);
+          }
+        }}
+      >
+        <label>
+          SN obiektu:
+          <input
+            type="text"
+            value={placeForm.obj_full_sn}
+            onChange={(e) =>
+              setPlaceForm((prev) => ({ ...prev, obj_full_sn: e.target.value }))
+            }
+            required
+            autoFocus
+          />
+        </label>
+        <label>
+          Miejsce:
+          <input
+            type="text"
+            value={placeForm.place_name}
+            onChange={(e) =>
+              setPlaceForm((prev) => ({ ...prev, place_name: e.target.value }))
+            }
+            required
+          />
+        </label>
+        <div style={{ marginTop: "1rem" }}>
+          <button type="submit" className="button-reset">Zapisz</button>
+          <button
+            type="button"
+            className="button-reset"
+            style={{ backgroundColor: "#fca5a5", color: "#991b1b", marginLeft: "1rem" }}
+            onClick={() => setShowChangePlaceModal(false)}
+          >
+            Anuluj
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
 
       {showSuccessToast && <div className="toast-success">✅ Obiekt został zapisany!</div>}
 

@@ -2,13 +2,11 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./ProcessAddView.css";
 
-
 const formatDate = (dateStr: string) =>
   new Date(dateStr).toLocaleDateString('pl-PL');
 
 const formatDateTime = (dateStr: string) =>
   new Date(dateStr).toLocaleString('pl-PL');
-
 
 function getCookie(name: string): string {
   const value = `; ${document.cookie}`;
@@ -43,6 +41,10 @@ const MoveObjectView: React.FC = () => {
   const [motherShortSn, setMotherShortSn] = useState("");
 
   const [objectsInTransit, setObjectsInTransit] = useState<ProductObject[]>([]);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
+  const loaderRef = useRef<HTMLDivElement | null>(null);
+
   const [showModal, setShowModal] = useState(true);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -59,24 +61,49 @@ const MoveObjectView: React.FC = () => {
   const [showAddChildModal, setShowAddChildModal] = useState(false);
   const [childSn, setChildSn] = useState("");
 
+  const normalizeUrl = (url: string) => {
+    try {
+      const parsed = new URL(url);
+      return parsed.pathname + parsed.search;
+    } catch {
+      return url;
+    }
+  };
+
+  const fetchObjects = async (url: string, append = false) => {
+    try {
+      const normalizedUrl = normalizeUrl(url);
+      const response = await fetch(normalizedUrl);
+      const data = await response.json();
+  
+      setObjectsInTransit(prev =>
+        append ? [...prev, ...data.results] : data.results
+      );
+      setNextPageUrl(data.next);
+      setTotalCount(data.count);
+    } catch (err) {
+      console.error("Błąd ładowania danych:", err);
+    }
+  };
+
   const handleMotherClick = async (obj: ProductObject) => {
     const motherId = obj.id;
-  
+
     if (expandedMotherId === motherId) {
       setExpandedMotherId(null);
       setShowAddChildModal(false);
       return;
     }
-  
+
     setExpandedMotherId(motherId);
     setMotherFullSn(obj.full_sn || obj.serial_number);
     setMotherShortSn(obj.serial_number);
     setShowAddChildModal(true);
-  
+
     try {
       const response = await fetch(`/api/process/${productId}/product-objects/${motherId}/children/`);
       if (!response.ok) throw new Error("Błąd podczas pobierania dzieci kartonu");
-  
+
       const data = await response.json();
       setChildrenMap(prev => ({ ...prev, [motherId]: data }));
     } catch (error) {
@@ -85,13 +112,10 @@ const MoveObjectView: React.FC = () => {
       setShowErrorModal(true);
     }
   };
-  
 
   useEffect(() => {
-    fetch(`/api/process/${productId}/product-objects/?current_process=${selectedProcess.id}&place_isnull=true`)
-      .then((res) => res.json())
-      .then((data) => setObjectsInTransit(data))
-      .catch(() => {});
+    const initialUrl = `/api/process/${productId}/product-objects/?current_process=${selectedProcess.id}&place_isnull=true`;
+    fetchObjects(initialUrl);
   }, [productId, selectedProcess.id]);
 
   useEffect(() => {
@@ -108,14 +132,14 @@ const MoveObjectView: React.FC = () => {
         setShowAddChildModal(false);
       }
     };
-  
+
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
   }, []);
 
   useEffect(() => {
     if (expandedMotherId === null) return;
-  
+
     const fetchChildren = async () => {
       try {
         const response = await fetch(`/api/process/${productId}/product-objects/${expandedMotherId}/children/`);
@@ -126,10 +150,26 @@ const MoveObjectView: React.FC = () => {
         console.error("Błąd odświeżania dzieci:", err);
       }
     };
-  
+
     fetchChildren();
-  
   }, [expandedMotherId, productId]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        const entry = entries[0];
+        if (entry.isIntersecting && nextPageUrl) {
+          fetchObjects(nextPageUrl, true);
+        }
+      },
+      { rootMargin: "100px" }
+    );
+
+    if (loaderRef.current) observer.observe(loaderRef.current);
+    return () => {
+      if (loaderRef.current) observer.unobserve(loaderRef.current);
+    };
+  }, [nextPageUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,7 +191,7 @@ const MoveObjectView: React.FC = () => {
         body: JSON.stringify({ full_sn, who_exit }),
       });
 
-      const result = await response.json(); // 🔧
+      const result = await response.json();
 
       if (response.ok) {
         if (result?.show_add_child_modal) {
@@ -161,29 +201,20 @@ const MoveObjectView: React.FC = () => {
           return;
         }
 
-        setFormData({
-          full_sn: "",
-          who_exit: userId,
-        });
-
+        setFormData({ full_sn: "", who_exit: userId });
         setShowSuccessToast(true);
         setTimeout(() => setShowSuccessToast(false), 3000);
         setTimeout(() => fullSnInputRef.current?.focus(), 0);
 
-        fetch(`/api/process/${productId}/product-objects/?current_process=${selectedProcess.id}&place_isnull=true`)
-          .then((res) => res.json())
-          .then((data) => setObjectsInTransit(data));
+        const url = `/api/process/${productId}/product-objects/?current_process=${selectedProcess.id}&place_isnull=true`;
+        fetchObjects(url);
       } else {
-        let backendError = "Wystąpił błąd podczas przenoszenia.";
-        if (typeof result?.error === "string") backendError = result.error;
-        else if (typeof result?.detail === "string") backendError = result.detail;
-        else if (typeof result?.message === "string") backendError = result.message;
-        else if (Array.isArray(result?.errors)) backendError = result.errors.join("\n");
-
+        let backendError = result?.error || result?.detail || result?.message ||
+          (Array.isArray(result?.errors) ? result.errors.join("\n") : "Wystąpił błąd podczas przenoszenia.");
         setErrorMessage(backendError);
         setShowErrorModal(true);
       }
-    } catch (err) {
+    } catch {
       setErrorMessage("Błąd sieci. Nie można połączyć się z serwerem.");
       setShowErrorModal(true);
     }
@@ -206,6 +237,11 @@ const MoveObjectView: React.FC = () => {
       </button>
 
       <div className="table-wrapper">
+      <div className="table-meta">
+          {totalCount !== null && (
+            <span className="count-label">Liczba produktów: {totalCount}</span>
+          )}
+        </div>
         <table className="fixtures-table">
           <thead>
             <tr>
@@ -266,11 +302,12 @@ const MoveObjectView: React.FC = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="italic-muted">Brak obiektów do przeniesienia.</td>
+                <td colSpan={6} className="italic-muted">Brak obiektów w drodze.</td>
               </tr>
             )}
           </tbody>
-        </table>
+          </table>
+          <div ref={loaderRef} style={{ height: "40px" }} />
       </div>
 
       {showModal && (
