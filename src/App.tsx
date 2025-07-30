@@ -5,8 +5,11 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import ProductList from './components/ProcessChecker/ProductList';
 import ProductProcesses from './components/ProcessChecker/ProductProcesses';
 import ProcessAction from './components/ProcessChecker/ProcessAction';
-import ProcessActionRouter from './views/ProcessActionRouter'; 
 import FlowEditor from './components/ProcessNewGen/FlowProcess';
+
+import AddObjectView from './components/Process/views/AddObjectView';
+import ReceiveObjectView from './components/Process/views/ReceiveObjectView';
+import MoveObjectView from './components/Process/views/MoveObjectView';
 
 function App() {
   return (
@@ -17,7 +20,11 @@ function App() {
         <Route path="/process" element={<ProductList />} />
         <Route path="/process/:productId" element={<ProductProcesses />} />
         <Route path="/process/:productId/process-action" element={<ProcessAction />} />
-        <Route path="/process/:productId/process-action/:actionType" element={<ProcessActionRouter />} />
+
+        <Route path="/process/:productId/process-action/add" element={<AddObjectView />} />
+        <Route path="/process/:productId/process-action/receive" element={<ReceiveObjectView />} />
+        <Route path="/process/:productId/process-action/move" element={<MoveObjectView />} />
+
         <Route path="/new-flow" element={<FlowEditor />} />
       </Routes>
     </Router>

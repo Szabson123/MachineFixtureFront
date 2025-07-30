@@ -62,7 +62,7 @@ const AddOrReceiveObjectView: React.FC<Props> = ({ endpointType }) => {
     who_entry: userId,
   });
 
-  const baseUrl = `/api/process/${productId}/product-objects/?current_process=${selectedProcess.id}&place_isnull=false`;
+  const baseUrl = `/api/process/${productId}/${selectedProcess.id}/product-objects/?place_isnull=true`;
 
   const normalizeUrl = (url: string) => {
     try {
@@ -285,11 +285,9 @@ const AddOrReceiveObjectView: React.FC<Props> = ({ endpointType }) => {
       </div>
 
       <div className="table-wrapper">
-        <div className="table-meta">
           {totalCount !== null && (
             <span className="count-label">Liczba produktów: {totalCount}</span>
           )}
-        </div>
         <table className="fixtures-table">
           <thead>
             <tr>

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import AddOrReceiveObjectView from "../components/ProcessChecker/AddOrReceiveObjectView";
-import MoveObjectView from "../components/ProcessChecker/MoveObjectView";
+import AddOrReceiveObjectView from "../../ProcessChecker/AddOrReceiveObjectView";
+import MoveObjectView from "./MoveObjectView";
+import "./views.css"
 
 const ProcessActionRouter: React.FC = () => {
   const { productId, actionType } = useParams<{ productId: string; actionType: string }>();

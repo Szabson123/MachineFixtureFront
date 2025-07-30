@@ -21,7 +21,10 @@ function transformGraphData(apiData: any) {
     id: node.id,
     type: typeMap[node.type] || 'default',
     position: { x: node.pos_x, y: node.pos_y },
-    data: { label: node.label },
+    data: {
+      label: node.label,
+      full: node,
+    },
     draggable: false
   }));
 
@@ -49,12 +52,20 @@ const FlowProcess: React.FC = () => {
   const navigate = useNavigate();
 
   const handleNodeClick = (_: any, node: Node) => {
-    localStorage.setItem('selectedProcess', JSON.stringify({
-      id: node.id,
-      name: node.data.label,
-      type: node.type,
-      // możesz dodać więcej, np. `order`, jeśli potrzebujesz
-    }));
+    const fullNode = node.data?.full;
+  
+    if (fullNode) {
+      localStorage.setItem('selectedProcess', JSON.stringify({
+        id: fullNode.id,
+        name: fullNode.label,
+        type: fullNode.type,
+        settings: {
+          defaults: fullNode.defaults,
+          starts: fullNode.starts,
+          endings: fullNode.endings,
+        }
+      }));
+    }
   
     navigate(`/process/${productId}/process-action`);
   };
