@@ -1,0 +1,96 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  nav {
+    background-color: #0e3d50;
+    color: white;
+    padding: 1.5rem 2.2rem;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .navbar-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .logo {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #ecf0f1;
+    text-decoration: none;
+    transition: color 0.3s;
+    letter-spacing: 0.5px;
+  }
+  
+  .logo:hover {
+    color: #3498db;
+  }
+  
+  .nav-links {
+    display: flex;
+    list-style: none;
+    gap: 2.5rem;
+  }
+  
+  .nav-links a {
+    color: #ecf0f1;
+    text-decoration: none;
+    font-weight: 400;
+    font-size: 1.1rem;
+    transition: all 0.3s;
+    position: relative;
+    padding: 0.5rem 0;
+    letter-spacing: 0.3px;
+  }
+  
+  .nav-links a:hover {
+    color: #3498db;
+  }
+  
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: #3498db;
+    transition: width 0.3s;
+  }
+  
+  .nav-links a:hover::after {
+    width: 100%;
+  }
+  
+  @media (max-width: 768px) {
+    nav {
+      padding: 1.2rem;
+    }
+  
+    .navbar-container {
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+  
+    .logo {
+      font-size: 1.6rem;
+    }
+  
+    .nav-links {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.2rem;
+    }
+  
+    .nav-links a {
+      font-size: 1rem;
+    }
+  }
+  

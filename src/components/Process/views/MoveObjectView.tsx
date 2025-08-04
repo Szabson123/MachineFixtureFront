@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useProductObjects } from "../hooks/useProductObjects";
 import { ProductObjectTable } from "../tables/ProductObjectTable";
@@ -70,6 +70,18 @@ const MoveObjectView: React.FC = () => {
       setError("Błąd sieci.");
     }
   };
+
+  useEffect(() => {
+    if (showModal && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [showModal]);
+  
+  useEffect(() => {
+    if (showAddChildModal && childInputRef.current) {
+      childInputRef.current.focus();
+    }
+  }, [showAddChildModal]);
 
   const handleMotherClick = async (obj: any) => {
     if (expandedMotherId === obj.id) {
@@ -149,7 +161,7 @@ const MoveObjectView: React.FC = () => {
         </button>
       </div>
 
-      <p className="progress-label">Liczba obiektów: {totalCount}</p>
+      <p className="progress-label margin-plus">Liczba obiektów: {totalCount}</p>
 
       <ProductObjectTable
         objects={objects}

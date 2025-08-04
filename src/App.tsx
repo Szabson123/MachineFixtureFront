@@ -11,6 +11,8 @@ import AddObjectView from './components/Process/views/AddObjectView';
 import ReceiveObjectView from './components/Process/views/ReceiveObjectView';
 import MoveObjectView from './components/Process/views/MoveObjectView';
 
+import ProductLogList from './components/Process/views/ProductLogList';
+
 function App() {
   return (
     <Router>
@@ -18,6 +20,7 @@ function App() {
         <Route path="/" element={<SSEComponent />} />
         <Route path="/goldens" element={<GoldenList />} />
         <Route path="/process" element={<ProductList />} />
+        <Route path="/traceability" element={<ProductLogList />} />
         <Route path="/process/:productId" element={<ProductProcesses />} />
         <Route path="/process/:productId/process-action" element={<ProcessAction />} />
 

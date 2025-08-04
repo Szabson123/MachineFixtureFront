@@ -9,6 +9,13 @@ import { useParams } from 'react-router-dom';
 import { GreenSquareNode, OrangeSquareNode, RedSquareNode, BlueSquareNode } from '../ProcessNewGen/NodesComp';
 import { useNavigate } from 'react-router-dom';
 
+const nodeTypes = {
+  normal: GreenSquareNode,
+  condition: OrangeSquareNode,
+  end: RedSquareNode,
+  add_receive: BlueSquareNode
+};
+
 const typeMap: Record<string, string> = {
   normal: 'normal',
   condition: 'condition',
@@ -96,13 +103,6 @@ const FlowProcess: React.FC = () => {
   
     fetchData();
   }, [productId]);
-
-  const nodeTypes = {
-    normal: GreenSquareNode,
-    condition: OrangeSquareNode,
-    end: RedSquareNode,
-    add_receive: BlueSquareNode
-  };
 
   return (
     <div className="flow-wrapper">

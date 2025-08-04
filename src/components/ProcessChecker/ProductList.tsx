@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./product-list.css";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../Navbar/Navbar";
 
 type Product = {
   id: number;
@@ -34,6 +35,8 @@ const ProductList: React.FC = () => {
   }, []);
 
   return (
+    <>
+    <Navbar />
     <div className="back">
       <div className="product-list">
         <div className="panel">
@@ -61,6 +64,7 @@ const ProductList: React.FC = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

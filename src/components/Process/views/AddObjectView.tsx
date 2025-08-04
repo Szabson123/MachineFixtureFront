@@ -25,9 +25,12 @@ const AddObjectView: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState("");
   const [showToast, setShowToast] = useState(false);
-
+  const [showMultiModal, setShowMultiModal] = useState(false);
+  const [multiSNs, setMultiSNs] = useState<string[]>([""]);
+  const [multiErrors, setMultiErrors] = useState<number[]>([]);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const multiSNRefs = useRef<HTMLInputElement[]>([]);
 
   useEffect(() => {
     if (showModal && inputRef.current) {
@@ -35,6 +38,38 @@ const AddObjectView: React.FC = () => {
     }
   }, [showModal]);
 
+  const handleMultiSNChange = (index: number, value: string) => {
+    const updated = [...multiSNs];
+    updated[index] = value;
+  
+    // usuń nadmiarowe puste pola, ale zostaw ostatni pusty
+    const nonEmpty = updated.filter((sn) => sn.trim() !== "");
+    const result =
+      updated[updated.length - 1].trim() === "" ? [...nonEmpty, ""] : [...nonEmpty];
+  
+    // Duplikaty
+    const duplicates: number[] = [];
+    result.forEach((sn, i) => {
+      if (sn && result.filter((s) => s === sn).length > 1) {
+        duplicates.push(i);
+      }
+    });
+  
+    setMultiErrors(duplicates);
+    setMultiSNs(result);
+  };
+
+  const handleCancelMultiModal = () => {
+    setShowMultiModal(false);
+    setMultiSNs([""]);
+    setMultiErrors([]);
+  };
+  const placeInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (showMultiModal && placeInputRef.current) {
+      placeInputRef.current.focus();
+    }
+  }, [showMultiModal]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await fetch(`/api/process/${productId}/${selectedProcess.id}/product-objects/`, {
@@ -76,11 +111,16 @@ const AddObjectView: React.FC = () => {
           ← Powrót
         </button>
         <button className="button-reset" onClick={() => setShowModal(true)}>
-        ➕ Dodaj nowy
+          ➕ Dodaj nowy
         </button>
+        {selectedProcess.settings?.starts?.add_multi && (
+          <button className="button-reset" onClick={() => setShowMultiModal(true)}>
+            ➕ Dodaj wiele
+          </button>
+        )}
       </div>
 
-      <p className="progress-label">Liczba obiektów: {totalCount}</p>
+      <p className="progress-label margin-plus">Liczba obiektów: {totalCount}</p>
 
       <ProductObjectTable
         objects={objects}
@@ -119,8 +159,8 @@ const AddObjectView: React.FC = () => {
               />
             </label>
             <div className="modal-footer">
-                <button className="button-reset" type="submit">Zapisz</button>
-                <button className="btn-normal" type="button" onClick={() => setShowModal(false)}>Zamknij</button>
+              <button className="button-reset" type="submit">Zapisz</button>
+              <button className="btn-normal" type="button" onClick={() => setShowModal(false)}>Zamknij</button>
             </div>
           </form>
         </Modal>
@@ -129,6 +169,113 @@ const AddObjectView: React.FC = () => {
       {error && <ErrorModal message={error} onClose={() => setError("")} />}
 
       {showToast && <Toast message="✅ Obiekt dodany!" onClose={() => setShowToast(false)} />}
+
+      {showMultiModal && (
+        <Modal title="Dodaj wiele SN" onClose={() => setShowMultiModal(false)} hideFooter>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const filtered = multiSNs.filter(sn => sn.trim() !== "");
+              const unique = [...new Set(filtered)];
+
+              if (filtered.length !== unique.length) return;
+
+              const res = await fetch(`/api/process/${productId}/${selectedProcess.id}/product-objects/bulk/`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                  sn_list: unique,
+                  place_name: formData.place_name,
+                  who_entry: formData.who_entry,
+                }),
+              });
+
+              if (res.ok) {
+                setShowMultiModal(false);
+                setMultiSNs([""]);
+                setMultiErrors([]);
+                refetch();
+                setShowToast(true);
+              } else {
+                const err = await res.json().catch(() => ({}));
+                setError(err.detail || "Wystąpił błąd podczas dodawania wielu SN.");
+              }
+            }}
+          >
+            <label>
+              Miejsce:
+              <input
+                ref={placeInputRef}
+                value={formData.place_name}
+                onChange={(e) => setFormData({ ...formData, place_name: e.target.value })}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                    e.preventDefault();
+                    multiSNRefs.current[0]?.focus();
+                    }
+                }}
+                required
+                />
+            </label>
+            <div
+  style={{
+    maxHeight: "400px",
+    overflowY: multiSNs.length > 10 ? "auto" : "visible",
+    paddingRight: "5px",
+    marginBottom: "1rem",
+    border: multiSNs.length > 10 ? "1px solid #ccc" : undefined,
+  }}
+>
+  {multiSNs.map((sn, index) => (
+    <div
+      key={index}
+      style={{ display: "flex", alignItems: "center", marginBottom: "5px" }}
+    >
+      <span style={{ width: "24px", textAlign: "right", marginRight: "8px" }}>
+        {index + 1}.
+      </span>
+      <input
+        ref={(el) => {
+          multiSNRefs.current[index] = el!;
+        }}
+        placeholder={`SN ${index + 1}`}
+        value={sn}
+        onChange={(e) => handleMultiSNChange(index, e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            const isLast = index === multiSNs.length - 1;
+            const trimmed = sn.trim();
+            if (trimmed !== "" && isLast) {
+              setMultiSNs((prev) => {
+                const updated = [...prev, ""];
+                setTimeout(() => {
+                  multiSNRefs.current[updated.length - 1]?.focus();
+                }, 0);
+                return updated;
+              });
+            }
+          }
+        }}
+        style={{
+          borderColor: multiErrors.includes(index) ? "red" : undefined,
+          flexGrow: 1,
+        }}
+      />
+    </div>
+  ))}
+</div>
+            <div className="modal-footer">
+              <button className="button-reset" type="submit">Zapisz</button>
+              <button className="btn-normal" type="button" onClick={handleCancelMultiModal}>Anuluj</button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 };
