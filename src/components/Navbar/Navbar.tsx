@@ -12,7 +12,7 @@ const Navbar: React.FC = () => {
         <ul className="nav-links">
           <li><Link to="/traceability">Traceability</Link></li>
           <li><Link to="/process">Planowanie produkcji</Link></li>
-          <li><Link to="/new-flow">Statystyki</Link></li>
+          <li><Link to="/process">Statystyki</Link></li>
           <li><Link to="/new-flow">Nowy Produkt </Link></li>
         </ul>
       </div>

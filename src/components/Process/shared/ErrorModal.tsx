@@ -8,7 +8,7 @@ interface ErrorModalProps {
 
 const ErrorModal: React.FC<ErrorModalProps> = ({ message, onClose }) => {
   return (
-    <div className="modal-overlay active">
+    <div className="modal-overlay active error-modal">
       <div className="modal">
         <h2>Błąd</h2>
         <p>{message}</p>

@@ -67,7 +67,12 @@ const AddOrReceiveObjectView: React.FC<Props> = ({ endpointType }) => {
   const normalizeUrl = (url: string) => {
     try {
       const parsed = new URL(url);
-      return parsed.pathname + parsed.search;
+      const currentOrigin = window.location.origin;
+  
+      if (parsed.origin === currentOrigin) {
+        return parsed.pathname + parsed.search;
+      }
+      return url;
     } catch {
       return url;
     }

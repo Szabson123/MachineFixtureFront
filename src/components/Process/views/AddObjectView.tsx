@@ -38,6 +38,23 @@ const AddObjectView: React.FC = () => {
     }
   }, [showModal]);
 
+  const parseApiError = (err: any): string => {
+    if (typeof err === "string") return err;
+  
+    if (err?.error) return err.error;
+    if (err?.detail) return err.detail;
+  
+    if (typeof err === "object" && err !== null) {
+      const firstField = Object.keys(err)[0];
+      const messages = err[firstField];
+      if (Array.isArray(messages) && messages.length > 0) {
+        return messages[0];
+      }
+    }
+  
+    return "Wystąpił nieznany błąd.";
+  };
+
   const handleMultiSNChange = (index: number, value: string) => {
     const updated = [...multiSNs];
     updated[index] = value;
@@ -89,7 +106,7 @@ const AddObjectView: React.FC = () => {
       setShowToast(true);
     } else {
       const err = await res.json().catch(() => ({}));
-      setError(err.detail || "Wystąpił błąd podczas dodawania.");
+      setError(parseApiError(err));
     }
   };
 
@@ -180,7 +197,7 @@ const AddObjectView: React.FC = () => {
 
               if (filtered.length !== unique.length) return;
 
-              const res = await fetch(`/api/process/${productId}/${selectedProcess.id}/product-objects/bulk/`, {
+              const res = await fetch(`/api/process/${productId}/${selectedProcess.id}/bulk-create/`, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
@@ -188,9 +205,9 @@ const AddObjectView: React.FC = () => {
                 },
                 credentials: "include",
                 body: JSON.stringify({
-                  sn_list: unique,
-                  place_name: formData.place_name,
+                  place: formData.place_name,
                   who_entry: formData.who_entry,
+                  objects: unique.map((sn) => ({ full_sn: sn }))
                 }),
               });
 

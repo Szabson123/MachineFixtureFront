@@ -10,6 +10,7 @@ import FlowEditor from './components/ProcessNewGen/FlowProcess';
 import AddObjectView from './components/Process/views/AddObjectView';
 import ReceiveObjectView from './components/Process/views/ReceiveObjectView';
 import MoveObjectView from './components/Process/views/MoveObjectView';
+import TrashObjectView from './components/Process/views/TrashObjectView';
 
 import ProductLogList from './components/Process/views/ProductLogList';
 
@@ -27,6 +28,7 @@ function App() {
         <Route path="/process/:productId/process-action/add" element={<AddObjectView />} />
         <Route path="/process/:productId/process-action/receive" element={<ReceiveObjectView />} />
         <Route path="/process/:productId/process-action/move" element={<MoveObjectView />} />
+        <Route path="/process/:productId/process-action/trash" element={<TrashObjectView />} />
 
         <Route path="/new-flow" element={<FlowEditor />} />
       </Routes>

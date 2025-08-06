@@ -8,7 +8,7 @@ const ProcessAction: React.FC = () => {
   const selectedProcess = JSON.parse(localStorage.getItem("selectedProcess") || "{}");
 
   const [showModal, setShowModal] = useState(false);
-  const [actionType, setActionType] = useState<null | "add" | "receive" | "move">(null);
+  const [actionType, setActionType] = useState<null | "add" | "receive" | "move" | "trash">(null);
   const [userId, setUserId] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -38,7 +38,7 @@ const ProcessAction: React.FC = () => {
     }
   }, [showModal]);
 
-  const handleAction = (type: "add" | "receive" | "move") => {
+  const handleAction = (type: "add" | "receive" | "move" | "trash") => {
     setActionType(type);
     setShowModal(true);
   };
@@ -94,7 +94,7 @@ const ProcessAction: React.FC = () => {
         case "end":
           return (
             <>
-              <div className="action-button receive-button" onClick={() => handleAction("receive")}>
+              <div className="action-button receive-button" onClick={() => handleAction("trash")}>
                 <h3>Wyrzuć</h3>
                 <p>Wyrzuć produkt</p>
               </div>

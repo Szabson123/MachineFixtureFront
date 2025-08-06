@@ -169,7 +169,7 @@ const ReceiveObjectView: React.FC = () => {
         <Modal title={isProductionProcess ? "Kontynuuj produkcję" : "Dodaj produkt"} onClose={() => setShowModal(false)} hideFooter>
           <form onSubmit={isProductionProcess ? handleContinueSubmit : handleReceiveSubmit}>
             <label>
-              Pasta:
+              Obiekt:
               <input
                 ref={inputRef}
                 value={formData.full_sn}
@@ -217,7 +217,7 @@ const ReceiveObjectView: React.FC = () => {
             </label>
 
             <label>
-              Pasta:
+              Obiekt:
               <input
                 value={productionForm.paste}
                 onChange={(e) => setProductionForm({ ...productionForm, paste: e.target.value })}
