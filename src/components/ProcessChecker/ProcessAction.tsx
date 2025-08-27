@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./ProcessAction.css";
+import SimpleCheckView from "../Process/views/CheckObjectView";
 
 const ProcessAction: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -12,10 +13,12 @@ const ProcessAction: React.FC = () => {
   const [userId, setUserId] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    const fetchPlaces = async () => {
-      if (!selectedProcess?.id) return;
+  const shouldRenderCheckDirectly =
+    selectedProcess?.settings?.autoCheck === true || selectedProcess?.type === "condition";
 
+  useEffect(() => {
+    if (!selectedProcess?.id) return;
+    const fetchPlaces = async () => {
       try {
         const response = await fetch(`/api/process/${selectedProcess.id}/place/`);
         if (response.ok) {
@@ -28,14 +31,11 @@ const ProcessAction: React.FC = () => {
         console.error("Błąd sieci przy pobieraniu miejsc:", error);
       }
     };
-
     fetchPlaces();
   }, [selectedProcess]);
 
   useEffect(() => {
-    if (showModal && inputRef.current) {
-      inputRef.current.focus();
-    }
+    if (showModal && inputRef.current) inputRef.current.focus();
   }, [showModal]);
 
   const handleAction = (type: "add" | "receive" | "move" | "trash") => {
@@ -44,15 +44,14 @@ const ProcessAction: React.FC = () => {
   };
 
   const handleConfirm = () => {
-    if (userId.trim() !== "") {
-      localStorage.setItem("userIdentifier", userId);
-      localStorage.setItem("processActionType", actionType as string);
-      setShowModal(false);
-
-      navigate(`/process/${productId}/process-action/${actionType}`);
-    } else {
+    if (userId.trim() === "") {
       alert("Wprowadź identyfikator przed przejściem dalej.");
+      return;
     }
+    localStorage.setItem("userIdentifier", userId);
+    localStorage.setItem("processActionType", actionType as string);
+    setShowModal(false);
+    navigate(`/process/${productId}/process-action/${actionType}`);
   };
 
   const renderButtons = () => {
@@ -65,12 +64,10 @@ const ProcessAction: React.FC = () => {
                 <h3>Dodaj</h3>
                 <p>Dodaj nowy produkt</p>
               </div>
-
               <div className="action-button receive-button" onClick={() => handleAction("receive")}>
                 <h3>Przyjmij</h3>
                 <p>Przyjmij produkt do procesu</p>
               </div>
-
               <div className="action-button move-button" onClick={() => handleAction("move")}>
                 <h3>Wydaj</h3>
                 <p>Wydaj produkt z procesu</p>
@@ -91,19 +88,32 @@ const ProcessAction: React.FC = () => {
             </div>
           </>
         );
-        case "end":
-          return (
-            <>
-              <div className="action-button receive-button" onClick={() => handleAction("trash")}>
-                <h3>Wyrzuć</h3>
-                <p>Wyrzuć produkt</p>
-              </div>
-            </>
-          );
+      case "end":
+        return (
+          <>
+            <div className="action-button receive-button" onClick={() => handleAction("trash")}>
+              <h3>Wyrzuć</h3>
+              <p>Wyrzuć produkt</p>
+            </div>
+          </>
+        );
       default:
         return <p>Brak dostępnych akcji dla tego procesu.</p>;
     }
   };
+
+  if (shouldRenderCheckDirectly) {
+    if (typeof window !== "undefined" && !window.location.search.includes("movement_type=")) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("movement_type", "check");
+      window.history.replaceState({}, "", url.toString());
+    }
+    return (
+      <div className="action-container">
+        <SimpleCheckView />
+      </div>
+    );
+  }
 
   return (
     <div className="action-container">
@@ -120,7 +130,6 @@ const ProcessAction: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">

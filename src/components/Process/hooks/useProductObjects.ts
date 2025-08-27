@@ -8,11 +8,21 @@ export function useProductObjects(initialUrl: string) {
 
   const fetchObjects = async (url: string, append = false) => {
     try {
-      const res = await fetch(url);
+      const parsed = new URL(url, window.location.origin);
+      const relativeUrl = parsed.pathname + parsed.search;
+
+      const res = await fetch(relativeUrl);
       const data = await res.json();
 
       setObjects((prev) => (append ? [...prev, ...data.results] : data.results));
-      setNextPageUrl(data.next);
+
+      if (data.next) {
+        const nextParsed = new URL(data.next, window.location.origin);
+        setNextPageUrl(nextParsed.pathname + nextParsed.search);
+      } else {
+        setNextPageUrl(null);
+      }
+
       setTotalCount(data.count);
     } catch (err) {
       console.error("Błąd ładowania danych:", err);
@@ -33,9 +43,9 @@ export function useProductObjects(initialUrl: string) {
       },
       { rootMargin: "100px" }
     );
-  
+
     if (loaderRef.current) observer.observe(loaderRef.current);
-  
+
     return () => {
       if (loaderRef.current) {
         observer.unobserve(loaderRef.current);
@@ -43,5 +53,10 @@ export function useProductObjects(initialUrl: string) {
     };
   }, [nextPageUrl]);
 
-  return { objects, totalCount, loaderRef, refetch: () => fetchObjects(initialUrl) };
+  return {
+    objects,
+    totalCount,
+    loaderRef,
+    refetch: () => fetchObjects(initialUrl),
+  };
 }

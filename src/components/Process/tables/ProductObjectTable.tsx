@@ -1,4 +1,3 @@
-// src/components/tables/ProductObjectTable.tsx
 import React from "react";
 
 interface ProductObjectTableProps {

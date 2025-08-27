@@ -1,8 +1,8 @@
 // src/views/ReceiveObjectView.tsx
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useProductObjects } from "../hooks/useProductObjects"; 
-import { ProductObjectTable } from "../tables/ProductObjectTable"; 
+import { useProductObjects } from "../hooks/useProductObjects";
+import { ProductObjectTable } from "../tables/ProductObjectTable";
 
 import Modal from "../shared/Modal";
 import ErrorModal from "../shared/ErrorModal";
@@ -14,18 +14,18 @@ const ReceiveObjectView: React.FC = () => {
   const userId = localStorage.getItem("userIdentifier") || "";
   const navigate = useNavigate();
 
-  // Endpoint for listing objects
   const endpoint = `/api/process/${productId}/${selectedProcess.id}/product-objects/?place_isnull=false`;
   const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint);
 
-  // Form state for receive / continue production
+  const [expandedMotherId, setExpandedMotherId] = useState<number | null>(null);
+  const [childrenMap, setChildrenMap] = useState<Record<number, any[]>>({});
+
   const [formData, setFormData] = useState({
     full_sn: "",
     place_name: "",
     who: userId,
   });
 
-  // Form state for starting new production
   const [productionForm, setProductionForm] = useState({ card: "", line: "", paste: "" });
 
   const [showModal, setShowModal] = useState(false);
@@ -35,7 +35,6 @@ const ReceiveObjectView: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const productionInputRef = useRef<HTMLInputElement>(null);
 
-  // Handlers
   const handleReceiveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await fetch(`/api/process/product-object/move/${selectedProcess.id}/`, {
@@ -114,7 +113,26 @@ const ReceiveObjectView: React.FC = () => {
     }
   };
 
-  // Auto-focus
+  const handleMotherClick = async (obj: any) => {
+    if (expandedMotherId === obj.id) {
+      setExpandedMotherId(null);
+      return;
+    }
+
+    setExpandedMotherId(obj.id);
+
+    if (childrenMap[obj.id]) return;
+
+    try {
+      const res = await fetch(`/api/process/${productId}/${selectedProcess.id}/product-objects/${obj.id}/children/`);
+      if (!res.ok) throw new Error();
+      const children = await res.json();
+      setChildrenMap((prev) => ({ ...prev, [obj.id]: children }));
+    } catch {
+      setError("Błąd pobierania dzieci.");
+    }
+  };
+
   useEffect(() => {
     if (showModal && inputRef.current) inputRef.current.focus();
   }, [showModal]);
@@ -156,12 +174,14 @@ const ReceiveObjectView: React.FC = () => {
       <p className="progress-label margin-plus">
         Liczba obiektów: {totalCount}
       </p>
+
       <ProductObjectTable
         objects={objects}
-        childrenMap={{}}
-        onMotherClick={() => {}}
-        expandedMotherId={null}
+        childrenMap={childrenMap}
+        onMotherClick={handleMotherClick}
+        expandedMotherId={expandedMotherId} 
       />
+
       <div ref={loaderRef} style={{ height: "40px" }} />
 
       {/* Continue / Receive Modal */}

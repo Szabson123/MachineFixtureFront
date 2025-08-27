@@ -13,6 +13,7 @@ import MoveObjectView from './components/Process/views/MoveObjectView';
 import TrashObjectView from './components/Process/views/TrashObjectView';
 
 import ProductLogList from './components/Process/views/ProductLogList';
+import SimpleCheckView from './components/Process/views/CheckObjectView';
 
 function App() {
   return (
@@ -29,6 +30,8 @@ function App() {
         <Route path="/process/:productId/process-action/receive" element={<ReceiveObjectView />} />
         <Route path="/process/:productId/process-action/move" element={<MoveObjectView />} />
         <Route path="/process/:productId/process-action/trash" element={<TrashObjectView />} />
+
+        <Route path="/process/:productId/process-action/check" element={<SimpleCheckView />} />
 
         <Route path="/new-flow" element={<FlowEditor />} />
       </Routes>

@@ -96,7 +96,7 @@ const MoveObjectView: React.FC = () => {
     setShowAddChildModal(true);
 
     try {
-      const res = await fetch(`/api/process/${productId}/product-objects/${obj.id}/children/`);
+      const res = await fetch(`/api/process/${productId}/${selectedProcess.id}/product-objects/${obj.id}/children/`);
       const children = await res.json();
       setChildrenMap((prev) => ({ ...prev, [obj.id]: children }));
     } catch {
@@ -128,7 +128,7 @@ const MoveObjectView: React.FC = () => {
         setChildSn("");
         childInputRef.current?.focus();
 
-        const childrenRes = await fetch(`/api/process/${productId}/product-objects/${expandedMotherId}/children/`);
+        const childrenRes = await fetch(`/api/process/${productId}/${selectedProcess.id}/product-objects/${expandedMotherId}/children/`);
         const children = await childrenRes.json();
         setChildrenMap((prev) => ({
           ...prev,

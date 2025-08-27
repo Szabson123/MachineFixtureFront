@@ -13,6 +13,9 @@ const AddObjectView: React.FC = () => {
   const userId = localStorage.getItem("userIdentifier") || "";
   const navigate = useNavigate();
 
+  const [expandedMotherId, setExpandedMotherId] = useState<number | null>(null);
+  const [childrenMap, setChildrenMap] = useState<Record<number, any[]>>({});
+
   const endpoint = `/api/process/${productId}/${selectedProcess.id}/product-objects/?place_isnull=false`;
   const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint);
 
@@ -39,32 +42,33 @@ const AddObjectView: React.FC = () => {
   }, [showModal]);
 
   const parseApiError = (err: any): string => {
+    if (!err) return "Wystąpił nieznany błąd.";
     if (typeof err === "string") return err;
-  
-    if (err?.error) return err.error;
-    if (err?.detail) return err.detail;
-  
-    if (typeof err === "object" && err !== null) {
-      const firstField = Object.keys(err)[0];
-      const messages = err[firstField];
-      if (Array.isArray(messages) && messages.length > 0) {
-        return messages[0];
+
+    if (err.message) return err.message;
+    if (err.detail) return err.detail;
+    if (err.error) return err.error;
+
+    if (typeof err === "object") {
+      const keys = Object.keys(err);
+      if (keys.length) {
+        const first = keys[0];
+        const val = err[first];
+        if (Array.isArray(val) && val.length) return String(val[0]);
+        if (typeof val === "string") return val;
       }
     }
-  
     return "Wystąpił nieznany błąd.";
   };
 
   const handleMultiSNChange = (index: number, value: string) => {
     const updated = [...multiSNs];
     updated[index] = value;
-  
-    // usuń nadmiarowe puste pola, ale zostaw ostatni pusty
+
     const nonEmpty = updated.filter((sn) => sn.trim() !== "");
     const result =
       updated[updated.length - 1].trim() === "" ? [...nonEmpty, ""] : [...nonEmpty];
-  
-    // Duplikaty
+
     const duplicates: number[] = [];
     result.forEach((sn, i) => {
       if (sn && result.filter((s) => s === sn).length > 1) {
@@ -75,6 +79,23 @@ const AddObjectView: React.FC = () => {
     setMultiErrors(duplicates);
     setMultiSNs(result);
   };
+
+  const handleMotherClick = async (obj: any) => {
+  if (expandedMotherId === obj.id) {
+    setExpandedMotherId(null);
+    return;
+  }
+
+  setExpandedMotherId(obj.id);
+
+  try {
+    const res = await fetch(`/api/process/${productId}/${selectedProcess.id}/product-objects/${obj.id}/children/`);
+    const children = await res.json();
+    setChildrenMap((prev) => ({ ...prev, [obj.id]: children }));
+  } catch {
+    setError("Błąd pobierania dzieci.");
+  }
+};
 
   const handleCancelMultiModal = () => {
     setShowMultiModal(false);
@@ -141,9 +162,9 @@ const AddObjectView: React.FC = () => {
 
       <ProductObjectTable
         objects={objects}
-        childrenMap={{}}
-        onMotherClick={() => {}}
-        expandedMotherId={null}
+        childrenMap={childrenMap}
+        onMotherClick={handleMotherClick}
+        expandedMotherId={expandedMotherId}
       />
       <div ref={loaderRef} style={{ height: "40px" }} />
 
