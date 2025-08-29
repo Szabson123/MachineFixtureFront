@@ -15,7 +15,18 @@ export const ProductObjectTable: React.FC<ProductObjectTableProps> = ({
 }) => {
   const formatDate = (d: string) => new Date(d).toLocaleDateString("pl-PL");
   const formatDateTime = (d: string) => new Date(d).toLocaleString("pl-PL");
-  const hasQuarantine = objects.some((obj) => !!obj.quranteen_time);
+
+  // 1) Zbierz ID matek obecnych w tej liście
+  const motherIds = new Set<number>(
+    objects.filter((o) => o.is_mother).map((o) => o.id)
+  );
+
+  // 2) Odfiltruj dzieci, których matka też jest na liście
+  const visibleObjects = objects.filter(
+    (o) => !(o.mother_object && motherIds.has(o.mother_object))
+  );
+
+  const hasQuarantine = visibleObjects.some((obj) => !!obj.quranteen_time);
 
   return (
     <div className="table-wrapper">
@@ -33,7 +44,7 @@ export const ProductObjectTable: React.FC<ProductObjectTableProps> = ({
   </tr>
 </thead>
 <tbody>
-  {objects.map((obj) => (
+  {visibleObjects.map((obj) => (
     <React.Fragment key={obj.id}>
       <tr
         onClick={() => obj.is_mother && onMotherClick(obj)}

@@ -32,14 +32,31 @@ const AddObjectView: React.FC = () => {
   const [multiSNs, setMultiSNs] = useState<string[]>([""]);
   const [multiErrors, setMultiErrors] = useState<number[]>([]);
 
+  // NEW: modal do dodawania wielu do wskazanej matki
+  const [showMultiToMotherModal, setShowMultiToMotherModal] = useState(false);
+  const [selectedMotherSN, setSelectedMotherSN] = useState<string>(""); // pełny SN do API
+  const [selectedMotherLabel, setSelectedMotherLabel] = useState<string>(""); // krótki SN do UI
+  const [selectedMotherPlace, setSelectedMotherPlace] = useState<string>(""); // display only
+
   const inputRef = useRef<HTMLInputElement>(null);
   const multiSNRefs = useRef<HTMLInputElement[]>([]);
+  const placeInputRef = useRef<HTMLInputElement>(null);
+
+  // helper na krótki SN
+  const getShortSN = (obj: any) =>
+    obj?.serial_number ?? obj?.short_sn ?? obj?.sn_short ?? (obj?.full_sn ? obj.full_sn.slice(-6) : "");
 
   useEffect(() => {
     if (showModal && inputRef.current) {
       inputRef.current.focus();
     }
   }, [showModal]);
+
+  useEffect(() => {
+    if (showMultiModal && placeInputRef.current) {
+      placeInputRef.current.focus();
+    }
+  }, [showMultiModal]);
 
   const parseApiError = (err: any): string => {
     if (!err) return "Wystąpił nieznany błąd.";
@@ -53,7 +70,7 @@ const AddObjectView: React.FC = () => {
       const keys = Object.keys(err);
       if (keys.length) {
         const first = keys[0];
-        const val = err[first];
+        const val = (err as any)[first];
         if (Array.isArray(val) && val.length) return String(val[0]);
         if (typeof val === "string") return val;
       }
@@ -75,39 +92,49 @@ const AddObjectView: React.FC = () => {
         duplicates.push(i);
       }
     });
-  
+
     setMultiErrors(duplicates);
     setMultiSNs(result);
   };
 
   const handleMotherClick = async (obj: any) => {
-  if (expandedMotherId === obj.id) {
-    setExpandedMotherId(null);
-    return;
-  }
+    // kliknięcie w tę samą matkę – tylko zwijamy/rozwijamy dzieci, nie otwieramy modala
+    if (expandedMotherId === obj.id) {
+      setExpandedMotherId(null);
+      return;
+    }
 
-  setExpandedMotherId(obj.id);
+    setExpandedMotherId(obj.id);
+    try {
+      const res = await fetch(`/api/process/${productId}/${selectedProcess.id}/product-objects/${obj.id}/children/`);
+      const children = await res.json();
+      setChildrenMap((prev) => ({ ...prev, [obj.id]: children }));
+    } catch {
+      setError("Błąd pobierania dzieci.");
+    }
 
-  try {
-    const res = await fetch(`/api/process/${productId}/${selectedProcess.id}/product-objects/${obj.id}/children/`);
-    const children = await res.json();
-    setChildrenMap((prev) => ({ ...prev, [obj.id]: children }));
-  } catch {
-    setError("Błąd pobierania dzieci.");
-  }
-};
+    // otwieramy modal tylko przy nowym rozwinięciu matki
+    if (obj?.full_sn) {
+      setSelectedMotherSN(obj.full_sn);
+      setSelectedMotherLabel(getShortSN(obj));
+      const placeName = obj?.current_place?.name ?? obj?.place_name ?? obj?.place ?? "";
+      setSelectedMotherPlace(placeName);
+      setShowMultiToMotherModal(true);
+    }
+  };
 
   const handleCancelMultiModal = () => {
     setShowMultiModal(false);
     setMultiSNs([""]);
     setMultiErrors([]);
   };
-  const placeInputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (showMultiModal && placeInputRef.current) {
-      placeInputRef.current.focus();
-    }
-  }, [showMultiModal]);
+
+  const handleCancelMultiToMotherModal = () => {
+    setShowMultiToMotherModal(false);
+    setMultiSNs([""]);
+    setMultiErrors([]);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await fetch(`/api/process/${productId}/${selectedProcess.id}/product-objects/`, {
@@ -131,7 +158,7 @@ const AddObjectView: React.FC = () => {
     }
   };
 
-  return (
+return (
     <div className="fixture-table-container">
       <h2 className="title-label">{selectedProcess.name}</h2>
       <p className="action-label">
@@ -208,6 +235,7 @@ const AddObjectView: React.FC = () => {
 
       {showToast && <Toast message="✅ Obiekt dodany!" onClose={() => setShowToast(false)} />}
 
+      {/* Istniejący modal dodawania wielu SN */}
       {showMultiModal && (
         <Modal title="Dodaj wiele SN" onClose={() => setShowMultiModal(false)} hideFooter>
           <form
@@ -251,65 +279,177 @@ const AddObjectView: React.FC = () => {
                 value={formData.place_name}
                 onChange={(e) => setFormData({ ...formData, place_name: e.target.value })}
                 onKeyDown={(e) => {
-                    if (e.key === "Enter") {
+                  if (e.key === "Enter") {
                     e.preventDefault();
                     multiSNRefs.current[0]?.focus();
-                    }
+                  }
                 }}
                 required
-                />
+              />
             </label>
             <div
-  style={{
-    maxHeight: "400px",
-    overflowY: multiSNs.length > 10 ? "auto" : "visible",
-    paddingRight: "5px",
-    marginBottom: "1rem",
-    border: multiSNs.length > 10 ? "1px solid #ccc" : undefined,
-  }}
->
-  {multiSNs.map((sn, index) => (
-    <div
-      key={index}
-      style={{ display: "flex", alignItems: "center", marginBottom: "5px" }}
-    >
-      <span style={{ width: "24px", textAlign: "right", marginRight: "8px" }}>
-        {index + 1}.
-      </span>
-      <input
-        ref={(el) => {
-          multiSNRefs.current[index] = el!;
-        }}
-        placeholder={`SN ${index + 1}`}
-        value={sn}
-        onChange={(e) => handleMultiSNChange(index, e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            const isLast = index === multiSNs.length - 1;
-            const trimmed = sn.trim();
-            if (trimmed !== "" && isLast) {
-              setMultiSNs((prev) => {
-                const updated = [...prev, ""];
-                setTimeout(() => {
-                  multiSNRefs.current[updated.length - 1]?.focus();
-                }, 0);
-                return updated;
-              });
-            }
-          }
-        }}
-        style={{
-          borderColor: multiErrors.includes(index) ? "red" : undefined,
-          flexGrow: 1,
-        }}
-      />
-    </div>
-  ))}
-</div>
+              style={{
+                maxHeight: "400px",
+                overflowY: multiSNs.length > 10 ? "auto" : "visible",
+                paddingRight: "5px",
+                marginBottom: "1rem",
+                border: multiSNs.length > 10 ? "1px solid #ccc" : undefined,
+              }}
+            >
+              {multiSNs.map((sn, index) => (
+                <div
+                  key={index}
+                  style={{ display: "flex", alignItems: "center", marginBottom: "5px" }}
+                >
+                  <span style={{ width: "24px", textAlign: "right", marginRight: "8px" }}>
+                    {index + 1}.
+                  </span>
+                  <input
+                    ref={(el) => { multiSNRefs.current[index] = el!; }}
+                    placeholder={`SN ${index + 1}`}
+                    value={sn}
+                    onChange={(e) => handleMultiSNChange(index, e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        const isLast = index === multiSNs.length - 1;
+                        const trimmed = sn.trim();
+                        if (trimmed !== "" && isLast) {
+                          setMultiSNs((prev) => {
+                            const updated = [...prev, ""];
+                            setTimeout(() => {
+                              multiSNRefs.current[updated.length - 1]?.focus();
+                            }, 0);
+                            return updated;
+                          });
+                        }
+                      }
+                    }}
+                    style={{
+                      borderColor: multiErrors.includes(index) ? "red" : undefined,
+                      flexGrow: 1,
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
             <div className="modal-footer">
               <button className="button-reset" type="submit">Zapisz</button>
               <button className="btn-normal" type="button" onClick={handleCancelMultiModal}>Anuluj</button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* NOWY modal: dodawanie wielu SN do wskazanej matki (dziedziczy miejsce z matki) */}
+      {showMultiToMotherModal && (
+        <Modal title="Dodaj wiele SN do matki" onClose={() => setShowMultiToMotherModal(false)} hideFooter>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const filtered = multiSNs.filter(sn => sn.trim() !== "");
+              const unique = [...new Set(filtered)];
+
+              if (filtered.length !== unique.length) return; // duplikaty – nic nie rób
+              if (!selectedMotherSN) {
+                setError("Brak wybranej matki (SN). Spróbuj ponownie.");
+                return;
+              }
+
+              const res = await fetch(`/api/process/${productId}/${selectedProcess.id}/bulk-create-to-mother/`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                  // place: pomijamy – backend powinien wziąć z matki
+                  who_entry: formData.who_entry,
+                  mother_sn: selectedMotherSN,
+                  objects: unique.map((sn) => ({ full_sn: sn }))
+                }),
+              });
+
+              if (res.ok) {
+                setShowMultiToMotherModal(false);
+                setMultiSNs([""]);
+                setMultiErrors([]);
+                refetch();
+                setShowToast(true);
+              } else {
+                const err = await res.json().catch(() => ({}));
+                setError(parseApiError(err) || "Wystąpił błąd podczas dodawania do matki.");
+              }
+            }}
+          >
+            <div style={{ marginBottom: "8px", fontWeight: 600 }}>
+              Matka: <span title={selectedMotherSN} style={{ fontFamily: "monospace" }}>{selectedMotherLabel || "(brak)"}</span>
+            </div>
+            {selectedMotherPlace && (
+              <div style={{ marginBottom: "12px" }}>
+                Miejsce matki: <strong>{selectedMotherPlace}</strong>
+              </div>
+            )}
+
+            <label>
+              Wprowadził:
+              <input
+                value={formData.who_entry}
+                onChange={(e) => setFormData({ ...formData, who_entry: e.target.value })}
+                required
+              />
+            </label>
+
+            <div
+              style={{
+                maxHeight: "400px",
+                overflowY: multiSNs.length > 10 ? "auto" : "visible",
+                paddingRight: "5px",
+                marginBottom: "1rem",
+                border: multiSNs.length > 10 ? "1px solid #ccc" : undefined,
+              }}
+            >
+              {multiSNs.map((sn, index) => (
+                <div
+                  key={index}
+                  style={{ display: "flex", alignItems: "center", marginBottom: "5px" }}
+                >
+                  <span style={{ width: "24px", textAlign: "right", marginRight: "8px" }}>
+                    {index + 1}.
+                  </span>
+                  <input
+                    ref={(el) => { multiSNRefs.current[index] = el!; }}
+                    placeholder={`SN ${index + 1}`}
+                    value={sn}
+                    onChange={(e) => handleMultiSNChange(index, e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        const isLast = index === multiSNs.length - 1;
+                        const trimmed = sn.trim();
+                        if (trimmed !== "" && isLast) {
+                          setMultiSNs((prev) => {
+                            const updated = [...prev, ""];
+                            setTimeout(() => {
+                              multiSNRefs.current[updated.length - 1]?.focus();
+                            }, 0);
+                            return updated;
+                          });
+                        }
+                      }
+                    }}
+                    style={{
+                      borderColor: multiErrors.includes(index) ? "red" : undefined,
+                      flexGrow: 1,
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="modal-footer">
+              <button className="button-reset" type="submit">Zapisz</button>
+              <button className="btn-normal" type="button" onClick={handleCancelMultiToMotherModal}>Anuluj</button>
             </div>
           </form>
         </Modal>

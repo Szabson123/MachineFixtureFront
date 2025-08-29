@@ -28,7 +28,7 @@ const TrashObjectView: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleTrashSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
     const res = await fetch(`/api/process/trash-obj/${selectedProcess.id}/`, {
       method: "POST",
@@ -44,9 +44,11 @@ const TrashObjectView: React.FC = () => {
     });
 
     if (res.ok) {
+      
       setFormData({ full_sn: "", place_name: "Kosz", who: userId });
       refetch();
-      setShowModal(false);
+
+      setTimeout(() => inputRef.current?.focus(), 0);
     } else {
       const err = await res.json().catch(() => ({}));
       setError(err.detail || "Błąd podczas wyrzucania obiektu.");
