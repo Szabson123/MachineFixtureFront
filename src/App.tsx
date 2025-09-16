@@ -14,6 +14,7 @@ import TrashObjectView from './components/Process/views/TrashObjectView';
 
 import ProductLogList from './components/Process/views/ProductLogList';
 import SimpleCheckView from './components/Process/views/CheckObjectView';
+import MachineStatuses from './components/Process/views/MachineStatuses';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         <Route path="/goldens" element={<GoldenList />} />
         <Route path="/process" element={<ProductList />} />
         <Route path="/traceability" element={<ProductLogList />} />
+        <Route path="/machine-statuses" element={<MachineStatuses />} />
         <Route path="/process/:productId" element={<ProductProcesses />} />
         <Route path="/process/:productId/process-action" element={<ProcessAction />} />
 

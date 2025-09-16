@@ -4,24 +4,41 @@
     box-sizing: border-box;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
-  
+
+  .logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.logo-img {
+  width: auto;
+  height: 140px;
+  margin-left: 128px;
+}
+
+.logo-text {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #000000;
+}
+
   nav {
-    background-color: #0e3d50;
-    color: white;
-    padding: 1.5rem 2.2rem;
+    background-color: #e2efff;
+    color: rgb(0, 0, 0);
     box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
   }
   
-  .navbar-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
+.navbar-container {
+  width: 90%;
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
   
   .logo {
-    font-size: 1.8rem;
+    font-size: 2.8rem;
     font-weight: 600;
     color: #ecf0f1;
     text-decoration: none;
@@ -40,10 +57,10 @@
   }
   
   .nav-links a {
-    color: #ecf0f1;
+    color: #000000;
     text-decoration: none;
-    font-weight: 400;
-    font-size: 1.1rem;
+    font-weight: 600;
+    font-size: 1.2rem;
     transition: all 0.3s;
     position: relative;
     padding: 0.5rem 0;

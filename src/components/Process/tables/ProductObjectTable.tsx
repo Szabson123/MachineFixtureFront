@@ -73,10 +73,11 @@ export const ProductObjectTable: React.FC<ProductObjectTableProps> = ({
 
       {expandedMotherId === obj.id && childrenMap[obj.id] && (
         <tr>
-          <td colSpan={8}>
+          <td colSpan={9}>
             <table className="child-table">
               <thead>
                 <tr>
+                  <th>#</th>
                   <th>Serial</th>
                   <th>Dodano</th>
                   <th>Data produkcji</th>
@@ -84,8 +85,9 @@ export const ProductObjectTable: React.FC<ProductObjectTableProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {childrenMap[obj.id].map((child) => (
+                {childrenMap[obj.id].map((child, index) => (
                   <tr key={child.id}>
+                    <td>{index + 1}.</td>
                     <td>{child.serial_number}</td>
                     <td>{formatDateTime(child.created_at)}</td>
                     <td>{formatDate(child.production_date)}</td>

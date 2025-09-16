@@ -19,6 +19,9 @@ const AddObjectView: React.FC = () => {
   const endpoint = `/api/process/${productId}/${selectedProcess.id}/product-objects/?place_isnull=false`;
   const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint);
 
+  // baza ścieżki do API (dla czytelności)
+  const basePath = `/api/process/${productId}/${selectedProcess.id}`;
+
   const [formData, setFormData] = useState({
     full_sn: "",
     place_name: "",
@@ -106,14 +109,14 @@ const AddObjectView: React.FC = () => {
 
     setExpandedMotherId(obj.id);
     try {
-      const res = await fetch(`/api/process/${productId}/${selectedProcess.id}/product-objects/${obj.id}/children/`);
+      const res = await fetch(`${basePath}/product-objects/${obj.id}/children/`);
       const children = await res.json();
       setChildrenMap((prev) => ({ ...prev, [obj.id]: children }));
     } catch {
       setError("Błąd pobierania dzieci.");
     }
 
-    // otwieramy modal tylko przy nowym rozwinięciu matki
+    // otwieramy modal dodawania dzieci do tej matki
     if (obj?.full_sn) {
       setSelectedMotherSN(obj.full_sn);
       setSelectedMotherLabel(getShortSN(obj));
@@ -137,7 +140,7 @@ const AddObjectView: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch(`/api/process/${productId}/${selectedProcess.id}/product-objects/`, {
+    const res = await fetch(`${basePath}/product-objects/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -158,7 +161,7 @@ const AddObjectView: React.FC = () => {
     }
   };
 
-return (
+  return (
     <div className="fixture-table-container">
       <h2 className="title-label">{selectedProcess.name}</h2>
       <p className="action-label">
@@ -179,7 +182,16 @@ return (
           ➕ Dodaj nowy
         </button>
         {selectedProcess.settings?.starts?.add_multi && (
-          <button className="button-reset" onClick={() => setShowMultiModal(true)}>
+          <button
+            className="button-reset"
+            onClick={() => {
+              // ten modal nie używa matki — czyścimy ją na wszelki wypadek
+              setSelectedMotherSN("");
+              setSelectedMotherLabel("");
+              setSelectedMotherPlace("");
+              setShowMultiModal(true);
+            }}
+          >
             ➕ Dodaj wiele
           </button>
         )}
@@ -235,7 +247,7 @@ return (
 
       {showToast && <Toast message="✅ Obiekt dodany!" onClose={() => setShowToast(false)} />}
 
-      {/* Istniejący modal dodawania wielu SN */}
+      {/* Istniejący modal dodawania wielu SN -> /bulk-create/ (bez matki) */}
       {showMultiModal && (
         <Modal title="Dodaj wiele SN" onClose={() => setShowMultiModal(false)} hideFooter>
           <form
@@ -244,9 +256,13 @@ return (
               const filtered = multiSNs.filter(sn => sn.trim() !== "");
               const unique = [...new Set(filtered)];
 
-              if (filtered.length !== unique.length) return;
+              if (filtered.length !== unique.length) return; // duplikaty – nic nie rób
+              if (!formData.place_name?.trim()) {
+                setError("Podaj miejsce.");
+                return;
+              }
 
-              const res = await fetch(`/api/process/${productId}/${selectedProcess.id}/bulk-create/`, {
+              const res = await fetch(`${basePath}/bulk-create/`, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
@@ -254,21 +270,21 @@ return (
                 },
                 credentials: "include",
                 body: JSON.stringify({
-                  place: formData.place_name,
                   who_entry: formData.who_entry,
+                  place_name: formData.place_name, // wysyłamy miejsce
                   objects: unique.map((sn) => ({ full_sn: sn }))
                 }),
               });
 
               if (res.ok) {
-                setShowMultiModal(false);
+                setShowMultiModal(false);     // <- zamykamy właściwy modal
                 setMultiSNs([""]);
                 setMultiErrors([]);
-                refetch();
                 setShowToast(true);
+                refetch();
               } else {
                 const err = await res.json().catch(() => ({}));
-                setError(err.detail || "Wystąpił błąd podczas dodawania wielu SN.");
+                setError(parseApiError(err) || "Wystąpił błąd podczas dodawania.");
               }
             }}
           >
@@ -341,7 +357,7 @@ return (
         </Modal>
       )}
 
-      {/* NOWY modal: dodawanie wielu SN do wskazanej matki (dziedziczy miejsce z matki) */}
+      {/* NOWY modal: dodawanie wielu SN do wskazanej matki (dziedziczy miejsce z matki) -> /bulk-create-to-mother/ */}
       {showMultiToMotherModal && (
         <Modal title="Dodaj wiele SN do matki" onClose={() => setShowMultiToMotherModal(false)} hideFooter>
           <form
@@ -356,7 +372,7 @@ return (
                 return;
               }
 
-              const res = await fetch(`/api/process/${productId}/${selectedProcess.id}/bulk-create-to-mother/`, {
+              const res = await fetch(`${basePath}/bulk-create-to-mother/`, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",

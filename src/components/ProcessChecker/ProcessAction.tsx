@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./ProcessAction.css";
 import SimpleCheckView from "../Process/views/CheckObjectView";
+import MiniMachineStatuses from "../Process/views/MiniMachineStatus";
 
 const ProcessAction: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -149,6 +150,11 @@ const ProcessAction: React.FC = () => {
           </div>
         </div>
       )}
+      {selectedProcess?.settings?.defaults?.production_process_type && (
+  <div className="action-statuses">
+    <MiniMachineStatuses />
+  </div>
+)}
     </div>
   );
 };

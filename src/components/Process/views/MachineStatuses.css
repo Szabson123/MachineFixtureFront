@@ -1,0 +1,131 @@
+.m-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 10px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.m-header {
+  color: #2c3e50;
+  font-size: 1.2rem; /* zmniejszona czcionka */
+  font-weight: 600;
+  margin-bottom: 15px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.m-groups-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.m-table-header {
+  background: #34495e;
+  color: white;
+}
+
+.m-table-header th {
+  padding: 8px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.m-table-row {
+  border-bottom: 1px solid #ecf0f1;
+  transition: background-color 0.2s ease;
+}
+
+.m-table-row:last-child {
+  border-bottom: none;
+}
+
+.m-table-row:hover {
+  background-color: #f8f9fa;
+}
+
+.m-table-cell {
+  padding: 8px;
+  font-size: 0.85rem;
+}
+
+.m-group-name {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.m-group-time {
+  color: #7f8c8d;
+  font-size: 0.8rem;
+}
+
+
+.m-status-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.m-status-ok {
+  color: #27ae60;
+  font-weight: 600;
+}
+
+.m-status-error {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+.m-status-icon {
+  font-size: 1rem;
+}
+
+.m-loading {
+  text-align: center;
+  padding: 40px;
+  color: #7f8c8d;
+  font-size: 1.1rem;
+}
+
+.m-refresh-info {
+  margin-top: 10px;
+  text-align: right;
+  font-size: 0.7rem;
+  color: #95a5a6;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .m-container {
+    padding: 10px;
+  }
+  
+  .m-table-header {
+    display: none;
+  }
+  
+  .m-table-row {
+    display: block;
+    margin-bottom: 15px;
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .m-table-cell {
+    display: block;
+    padding: 8px 0;
+  }
+  
+  .m-table-cell:before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #2c3e50;
+    margin-right: 10px;
+  }
+}

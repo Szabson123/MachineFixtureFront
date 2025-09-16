@@ -23,25 +23,25 @@ const MoveObjectView: React.FC = () => {
     place_name: "",
   });
 
-  const [showModal, setShowModal] = useState(false);
-  const [showAddChildModal, setShowAddChildModal] = useState(false);
-  const [expandedMotherId, setExpandedMotherId] = useState<number | null>(null);
+  const [showMoveModal, setShowMoveModal] = useState(false);
 
-  // Mother context
+  const [showMultiToMotherModal, setShowMultiToMotherModal] = useState(false);
   const [motherFullSn, setMotherFullSn] = useState("");
   const [motherShortSn, setMotherShortSn] = useState("");
+  const [motherPlace, setMotherPlace] = useState("");
 
-  // Multi-add state (the same UX as in AddObjectView)
+  const [expandedMotherId, setExpandedMotherId] = useState<number | null>(null);
+  const [childrenMap, setChildrenMap] = useState<Record<number, any[]>>({});
+
   const [multiSNs, setMultiSNs] = useState<string[]>([""]);
   const [multiErrors, setMultiErrors] = useState<number[]>([]);
-
-  const [childrenMap, setChildrenMap] = useState<Record<number, any[]>>({});
   const [error, setError] = useState("");
 
   const inputRef = useRef<HTMLInputElement>(null);
   const multiSNRefs = useRef<HTMLInputElement[]>([]);
 
-  const shortSn = (obj: any) => obj?.serial_number ?? obj?.sn_short ?? (obj?.full_sn ? obj.full_sn.slice(-6) : "");
+  const shortSn = (obj: any) =>
+    obj?.serial_number ?? obj?.sn_short ?? (obj?.full_sn ? obj.full_sn.slice(-6) : "");
 
   const parseApiError = (err: any): string => {
     if (!err) return "Wystąpił nieznany błąd.";
@@ -64,8 +64,10 @@ const MoveObjectView: React.FC = () => {
   const handleMultiSNChange = (index: number, value: string) => {
     const updated = [...multiSNs];
     updated[index] = value;
+
     const nonEmpty = updated.filter((sn) => sn.trim() !== "");
-    const result = updated[updated.length - 1].trim() === "" ? [...nonEmpty, ""] : [...nonEmpty];
+    const result =
+      updated[updated.length - 1].trim() === "" ? [...nonEmpty, ""] : [...nonEmpty];
 
     const duplicates: number[] = [];
     result.forEach((sn, i) => {
@@ -76,13 +78,23 @@ const MoveObjectView: React.FC = () => {
     setMultiSNs(result);
   };
 
-  const openAddChildModal = (mother: { full_sn?: string; serial_number?: string }) => {
-    if (!expectingChild) return; // tylko gdy proces oczekuje dzieci
-    const full = mother.full_sn || "";
-    const label = mother.serial_number || (full ? full.slice(-6) : "");
+  const openAddChildModal = (motherObj: {
+    full_sn?: string;
+    serial_number?: string;
+    place_name?: string;
+    current_place?: { name?: string };
+  }) => {
+    if (!expectingChild) return;
+    const full = motherObj.full_sn || "";
+    const label = motherObj.serial_number || (full ? full.slice(-6) : "");
+    const place = motherObj.current_place?.name ?? motherObj.place_name ?? "";
+
     setMotherFullSn(full);
     setMotherShortSn(label);
-    setShowAddChildModal(true);
+    setMotherPlace(place);
+    setMultiSNs([""]);
+    setMultiErrors([]);
+    setShowMultiToMotherModal(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -102,16 +114,39 @@ const MoveObjectView: React.FC = () => {
       });
 
       const data = await res.json().catch(() => ({}));
+      // spodziewamy się teraz: { detail: "...", id: number, is_mother: boolean }
 
       if (res.ok) {
         setFormData({ full_sn: "", who: userId, place_name: "" });
         refetch();
 
-        const backendSuggests = Boolean(data?.show_add_child_modal);
-        if (backendSuggests) {
-          openAddChildModal({ full_sn: formData.full_sn, serial_number: data?.serial_number });
+        if (expectingChild && data?.is_mother === true && typeof data?.id === "number") {
+          try {
+            const childrenRes = await fetch(
+              `/api/process/${productId}/${selectedProcess.id}/product-objects/${data.id}/children/`
+            );
+            if (childrenRes.ok) {
+              const kids = await childrenRes.json();
+              // podtrzymujemy cache dzieci dla UX
+              setChildrenMap((prev) => ({ ...prev, [data.id]: kids }));
+
+              // pusto? pokaż modal dodawania dzieci
+              if (Array.isArray(kids) && kids.length === 0) {
+                openAddChildModal({
+                  full_sn: data?.full_sn || formData.full_sn,
+                  // jeśli backend nie zwraca short sn / place w tej odpowiedzi, użyjemy fallbacków:
+                  serial_number: data?.serial_number,
+                  place_name: data?.place_name,
+                  current_place: data?.current_place,
+                });
+              }
+            }
+          } catch {
+            // jeżeli sprawdzenie dzieci się nie uda – nie wymuszamy modala
+          }
         }
-        setShowModal(false);
+
+        setShowMoveModal(false);
       } else {
         setError(data?.detail || "Błąd przenoszenia.");
       }
@@ -121,39 +156,43 @@ const MoveObjectView: React.FC = () => {
   };
 
   useEffect(() => {
-    if (showModal && inputRef.current) inputRef.current.focus();
-  }, [showModal]);
+    if (showMoveModal && inputRef.current) inputRef.current.focus();
+  }, [showMoveModal]);
 
   useEffect(() => {
-    if (showAddChildModal) {
-      // focus w pierwsze pole SN dziecka
+    if (showMultiToMotherModal) {
       setTimeout(() => multiSNRefs.current[0]?.focus(), 0);
     }
-  }, [showAddChildModal]);
+  }, [showMultiToMotherModal]);
 
   const handleMotherClick = async (obj: any) => {
     if (expandedMotherId === obj.id) {
       setExpandedMotherId(null);
-      setShowAddChildModal(false);
       return;
     }
 
     setExpandedMotherId(obj.id);
 
-    let children = childrenMap[obj.id];
-    if (!children) {
-      try {
-        const res = await fetch(`/api/process/${productId}/${selectedProcess.id}/product-objects/${obj.id}/children/`);
-        if (!res.ok) throw new Error();
-        children = await res.json();
-        setChildrenMap((prev) => ({ ...prev, [obj.id]: children! }));
-      } catch {
-        setError("Błąd pobierania dzieci.");
-      }
+    // zawsze dociągamy dzieci z endpointu children/
+    try {
+      const res = await fetch(
+        `/api/process/${productId}/${selectedProcess.id}/product-objects/${obj.id}/children/`
+      );
+      if (!res.ok) throw new Error();
+      const children = await res.json();
+      setChildrenMap((prev) => ({ ...prev, [obj.id]: children }));
+    } catch {
+      setError("Błąd pobierania dzieci.");
     }
 
-    if (expectingChild && Array.isArray(children) && children.length === 0) {
-      openAddChildModal({ full_sn: obj.full_sn, serial_number: shortSn(obj) });
+    // dodatkowo: jeśli oczekujemy dzieci, klik w matkę otwiera modal
+    if (expectingChild && obj?.full_sn) {
+      openAddChildModal({
+        full_sn: obj.full_sn,
+        serial_number: shortSn(obj),
+        place_name: obj?.place_name ?? obj?.place ?? "",
+        current_place: obj?.current_place,
+      });
     }
   };
 
@@ -164,19 +203,22 @@ const MoveObjectView: React.FC = () => {
     if (filtered.length !== unique.length) return;
 
     try {
-      const res = await fetch(`/api/process/${productId}/${selectedProcess.id}/bulk-create-to-mother/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          who_entry: userId,
-          mother_sn: motherFullSn,
-          objects: unique.map((sn) => ({ full_sn: sn })),
-        }),
-      });
+      const res = await fetch(
+        `/api/process/${productId}/${selectedProcess.id}/bulk-create-to-mother/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            who_entry: userId,
+            mother_sn: motherFullSn,
+            objects: unique.map((sn) => ({ full_sn: sn })),
+          }),
+        }
+      );
 
       const data = await res.json().catch(() => ({}));
 
@@ -185,11 +227,14 @@ const MoveObjectView: React.FC = () => {
         setMultiErrors([]);
         if (expandedMotherId) {
           try {
-            const childrenRes = await fetch(`/api/process/${productId}/${selectedProcess.id}/product-objects/${expandedMotherId}/children/`);
+            const childrenRes = await fetch(
+              `/api/process/${productId}/${selectedProcess.id}/product-objects/${expandedMotherId}/children/`
+            );
             const newChildren = await childrenRes.json();
             setChildrenMap((prev) => ({ ...prev, [expandedMotherId]: newChildren }));
           } catch {}
         }
+        setShowMultiToMotherModal(false);
       } else {
         setError(parseApiError(data) || "Błąd dodawania dzieci.");
       }
@@ -209,10 +254,13 @@ const MoveObjectView: React.FC = () => {
       </p>
 
       <div className="action-button-wrapper">
-        <button className="back-button" onClick={() => navigate(`/process/${productId}/process-action`)}>
+        <button
+          className="back-button"
+          onClick={() => navigate(`/process/${productId}/process-action`)}
+        >
           ← Powrót
         </button>
-        <button className="button-reset" onClick={() => setShowModal(true)}>
+        <button className="button-reset" onClick={() => setShowMoveModal(true)}>
           ➕ Przenieś nowy
         </button>
       </div>
@@ -227,8 +275,8 @@ const MoveObjectView: React.FC = () => {
       />
       <div ref={loaderRef} style={{ height: "40px" }} />
 
-      {showModal && (
-        <Modal title="Dodaj produkt" onClose={() => setShowModal(false)} hideFooter>
+      {showMoveModal && (
+        <Modal title="Przenieś produkt" onClose={() => setShowMoveModal(false)} hideFooter>
           <form onSubmit={handleSubmit}>
             <label>
               SN:
@@ -249,18 +297,32 @@ const MoveObjectView: React.FC = () => {
             </label>
             <div className="modal-footer">
               <button className="button-reset" type="submit">Zapisz</button>
-              <button className="btn-normal" type="button" onClick={() => setShowModal(false)}>Zamknij</button>
+              <button className="btn-normal" type="button" onClick={() => setShowMoveModal(false)}>Zamknij</button>
             </div>
           </form>
         </Modal>
       )}
 
-      {showAddChildModal && (
-        <Modal title={`Karton: ${motherShortSn || motherFullSn.slice(-6)}`} onClose={() => setShowAddChildModal(false)} hideFooter>
+      {showMultiToMotherModal && (
+        <Modal title="Dodaj wiele SN do matki" onClose={() => setShowMultiToMotherModal(false)} hideFooter>
           <form onSubmit={handleBulkAddChildren}>
-            <div style={{ marginBottom: "8px" }}>
-              Matka: <span title={motherFullSn} style={{ fontFamily: "monospace" }}>{motherShortSn || motherFullSn.slice(-6)}</span>
+            <div style={{ marginBottom: "8px", fontWeight: 600 }}>
+              Matka:{" "}
+              <span title={motherFullSn} style={{ fontFamily: "monospace" }}>
+                {motherShortSn || (motherFullSn ? motherFullSn.slice(-6) : "(brak)")}
+              </span>
             </div>
+            {motherPlace && (
+              <div style={{ marginBottom: "12px" }}>
+                Miejsce matki: <strong>{motherPlace}</strong>
+              </div>
+            )}
+
+            <label>
+              Wprowadził:
+              <input value={userId} onChange={() => {}} readOnly />
+            </label>
+
             <div
               style={{
                 maxHeight: "400px",
@@ -272,10 +334,12 @@ const MoveObjectView: React.FC = () => {
             >
               {multiSNs.map((sn, index) => (
                 <div key={index} style={{ display: "flex", alignItems: "center", marginBottom: "5px" }}>
-                  <span style={{ width: "24px", textAlign: "right", marginRight: "8px" }}>{index + 1}.</span>
+                  <span style={{ width: "24px", textAlign: "right", marginRight: "8px" }}>
+                    {index + 1}.
+                  </span>
                   <input
                     ref={(el) => { multiSNRefs.current[index] = el!; }}
-                    placeholder={`SN dziecka ${index + 1}`}
+                    placeholder={`SN ${index + 1}`}
                     value={sn}
                     onChange={(e) => handleMultiSNChange(index, e.target.value)}
                     onKeyDown={(e) => {
@@ -286,7 +350,9 @@ const MoveObjectView: React.FC = () => {
                         if (trimmed !== "" && isLast) {
                           setMultiSNs((prev) => {
                             const updated = [...prev, ""];
-                            setTimeout(() => { multiSNRefs.current[updated.length - 1]?.focus(); }, 0);
+                            setTimeout(() => {
+                              multiSNRefs.current[updated.length - 1]?.focus();
+                            }, 0);
                             return updated;
                           });
                         }
@@ -299,7 +365,9 @@ const MoveObjectView: React.FC = () => {
             </div>
             <div className="modal-footer">
               <button className="button-reset" type="submit">Dodaj dzieci</button>
-              <button className="btn-normal" type="button" onClick={() => setShowAddChildModal(false)}>Zamknij</button>
+              <button className="btn-normal" type="button" onClick={() => setShowMultiToMotherModal(false)}>
+                Zamknij
+              </button>
             </div>
           </form>
         </Modal>
