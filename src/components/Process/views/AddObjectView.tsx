@@ -15,9 +15,9 @@ const AddObjectView: React.FC = () => {
 
   const [expandedMotherId, setExpandedMotherId] = useState<number | null>(null);
   const [childrenMap, setChildrenMap] = useState<Record<number, any[]>>({});
-
+  const [ordering, setOrdering] = useState<string>("-expire_date_final");
   const endpoint = `/api/process/${productId}/${selectedProcess.id}/product-objects/?place_isnull=false`;
-  const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint);
+  const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint, ordering);
 
   // baza ścieżki do API (dla czytelności)
   const basePath = `/api/process/${productId}/${selectedProcess.id}`;
@@ -204,6 +204,17 @@ const AddObjectView: React.FC = () => {
         childrenMap={childrenMap}
         onMotherClick={handleMotherClick}
         expandedMotherId={expandedMotherId}
+        ordering={ordering}
+        onSortChange={(field) => {
+          // kliknięcie w nagłówek
+          if (ordering === field) {
+            setOrdering("-" + field); // rosnąco -> malejąco
+          } else if (ordering === "-" + field) {
+            setOrdering(field); // malejąco -> rosnąco
+          } else {
+            setOrdering(field); // nowe pole -> rosnąco
+          }
+        }}
       />
       <div ref={loaderRef} style={{ height: "40px" }} />
 

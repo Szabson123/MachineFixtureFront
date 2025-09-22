@@ -12,9 +12,10 @@ const TrashObjectView: React.FC = () => {
   const selectedProcess = JSON.parse(localStorage.getItem("selectedProcess") || "{}");
   const userId = localStorage.getItem("userIdentifier") || "";
   const navigate = useNavigate();
+  const [ordering, setOrdering] = useState<string>("-expire_date_final");
 
   const endpoint = `/api/process/${productId}/${selectedProcess.id}/product-objects/?place_isnull=false`;
-  const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint);
+  const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint, ordering);
 
   const [formData, setFormData] = useState({
     full_sn: "",
@@ -26,6 +27,12 @@ const TrashObjectView: React.FC = () => {
   const [error, setError] = useState("");
 
   const inputRef = useRef<HTMLInputElement>(null);
+
+    const handleSortChange = (field: string) => {
+  setOrdering((prev) =>
+    prev === field ? `-${field}` : field
+  );
+};
 
   const handleTrashSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -90,6 +97,8 @@ const TrashObjectView: React.FC = () => {
         childrenMap={{}}
         onMotherClick={() => {}}
         expandedMotherId={null}
+        onSortChange={handleSortChange}
+        ordering={ordering}
       />
       <div ref={loaderRef} style={{ height: "40px" }} />
 

@@ -11,9 +11,11 @@ const MoveObjectView: React.FC = () => {
   const selectedProcess = JSON.parse(localStorage.getItem("selectedProcess") || "{}");
   const userId = localStorage.getItem("userIdentifier") || "";
   const navigate = useNavigate();
+  const [ordering, setOrdering] = useState<string>("-expire_date_final");
+
 
   const endpoint = `/api/process/${productId}/${selectedProcess.id}/product-objects/?place_isnull=true`;
-  const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint);
+const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint, ordering);
 
   const expectingChild: boolean = !!selectedProcess?.settings?.starts?.expecting_child;
 
@@ -42,6 +44,10 @@ const MoveObjectView: React.FC = () => {
 
   const shortSn = (obj: any) =>
     obj?.serial_number ?? obj?.sn_short ?? (obj?.full_sn ? obj.full_sn.slice(-6) : "");
+
+  const handleSortChange = (field: string) => {
+  setOrdering((prev) => (prev === field ? `-${field}` : field));
+};
 
   const parseApiError = (err: any): string => {
     if (!err) return "Wystąpił nieznany błąd.";
@@ -272,6 +278,8 @@ const MoveObjectView: React.FC = () => {
         childrenMap={childrenMap}
         onMotherClick={handleMotherClick}
         expandedMotherId={expandedMotherId}
+        onSortChange={handleSortChange}
+        ordering={ordering}
       />
       <div ref={loaderRef} style={{ height: "40px" }} />
 

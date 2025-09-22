@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 
-export function useProductObjects(initialUrl: string) {
+export function useProductObjects(initialUrl: string, ordering: string) {
   const [objects, setObjects] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState<number | null>(null);
   const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
@@ -9,6 +9,12 @@ export function useProductObjects(initialUrl: string) {
   const fetchObjects = async (url: string, append = false) => {
     try {
       const parsed = new URL(url, window.location.origin);
+
+      // dopinamy ordering
+      if (ordering) {
+        parsed.searchParams.set("ordering", ordering);
+      }
+
       const relativeUrl = parsed.pathname + parsed.search;
 
       const res = await fetch(relativeUrl);
@@ -30,8 +36,9 @@ export function useProductObjects(initialUrl: string) {
   };
 
   useEffect(() => {
+    // kiedy zmieni się ordering -> od nowa
     fetchObjects(initialUrl);
-  }, [initialUrl]);
+  }, [initialUrl, ordering]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(

@@ -198,9 +198,9 @@ const GoldenList: React.FC = () => {
         {/* PANEL 1 – Warianty */}
         <div className="panel">
           <div className="panel-header">
-            <h3>Dostępne Warianty</h3>
+            <h3>Kody końcowe</h3>
             <button onClick={() => setShowVariantModal(true)} className="add-pattern-btn">
-              ➕ Dodaj wariant
+              ➕ Kod końcowy
             </button>
           </div>
           <input
@@ -234,7 +234,7 @@ const GoldenList: React.FC = () => {
         {/* PANEL 2 – Goldeny dla wybranego wariantu */}
         <div className="panel">
           <div className="panel-header">
-            <h3>{selectedVariantCode ? `Golden: ${selectedVariantCode}` : "Goldeny"}</h3>
+            <h3>{selectedVariantCode ? `Wzorce dla: ${selectedVariantCode}` : "Wzorce"}</h3>
             <button
               onClick={() => {
                 if (!selectedVariantId || !selectedVariantCode) {
@@ -252,7 +252,7 @@ const GoldenList: React.FC = () => {
             {!selectedVariantId ? (
               <div className="empty-state centered-message">Wybierz wariant</div>
             ) : selectedGoldens.length === 0 ? (
-              <div className="empty-state">Brak goldenów dla tego wariantu</div>
+              <div className="empty-state">Brak wzorców dla tego wariantu</div>
             ) : (
               selectedGoldens.map((golden) => (
                 <div

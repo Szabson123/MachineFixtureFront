@@ -13,9 +13,9 @@ const ReceiveObjectView: React.FC = () => {
   const isProductionProcess = selectedProcess?.settings?.defaults?.production_process_type === true;
   const userId = localStorage.getItem("userIdentifier") || "";
   const navigate = useNavigate();
-
+  const [ordering, setOrdering] = useState<string>("-expire_date_final");
   const endpoint = `/api/process/${productId}/${selectedProcess.id}/product-objects/?place_isnull=false`;
-  const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint);
+  const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint, ordering);
 
   const [expandedMotherId, setExpandedMotherId] = useState<number | null>(null);
   const [childrenMap, setChildrenMap] = useState<Record<number, any[]>>({});
@@ -25,6 +25,12 @@ const ReceiveObjectView: React.FC = () => {
     place_name: "",
     who: userId,
   });
+
+  const handleSortChange = (field: string) => {
+  setOrdering((prev) =>
+    prev === field ? `-${field}` : field
+  );
+};
 
   const [productionForm, setProductionForm] = useState({ card: "", line: "", paste: "" });
 
@@ -179,7 +185,9 @@ const ReceiveObjectView: React.FC = () => {
         objects={objects}
         childrenMap={childrenMap}
         onMotherClick={handleMotherClick}
-        expandedMotherId={expandedMotherId} 
+        expandedMotherId={expandedMotherId}
+        onSortChange={handleSortChange}
+        ordering={ordering}
       />
 
       <div ref={loaderRef} style={{ height: "40px" }} />
