@@ -4,6 +4,7 @@ import "./modal.css";
 interface ErrorModalProps {
   message: string;
   onClose: () => void;
+  children?: React.ReactNode;
 }
 
 const ErrorModal: React.FC<ErrorModalProps> = ({ message, onClose }) => {

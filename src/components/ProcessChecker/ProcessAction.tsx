@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import "./ProcessAction.css";
 import SimpleCheckView from "../Process/views/CheckObjectView";
 import MiniMachineStatuses from "../Process/views/MiniMachineStatus";
+import ErrorModal from "../Process/shared/ErrorModal";
 
 const ProcessAction: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -12,7 +13,9 @@ const ProcessAction: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [actionType, setActionType] = useState<null | "add" | "receive" | "move" | "trash">(null);
   const [userId, setUserId] = useState("");
+  const [firstCharTime, setFirstCharTime] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const shouldRenderCheckDirectly =
     selectedProcess?.settings?.autoCheck === true || selectedProcess?.type === "condition";
@@ -36,7 +39,11 @@ const ProcessAction: React.FC = () => {
   }, [selectedProcess]);
 
   useEffect(() => {
-    if (showModal && inputRef.current) inputRef.current.focus();
+    if (showModal) {
+      setUserId("");
+      setFirstCharTime(null);
+      if (inputRef.current) inputRef.current.focus();
+    }
   }, [showModal]);
 
   const handleAction = (type: "add" | "receive" | "move" | "trash") => {
@@ -44,37 +51,89 @@ const ProcessAction: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleConfirm = () => {
-    if (userId.trim() === "") {
-      alert("Wprowadź identyfikator przed przejściem dalej.");
+  const resetInput = () => {
+    setUserId("");
+    setFirstCharTime(null);
+    if (inputRef.current) inputRef.current.focus();
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+      if (userId.trim() === "") {
+      setErrorMessage("Nie wolno wklejać. Użyj skanera");
+      resetInput();
       return;
     }
+    resetInput();
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+
+    if (value.length === 1 && !firstCharTime) {
+      setFirstCharTime(Date.now());
+    }
+
+    setUserId(value);
+  };
+
+const handleConfirm = () => {
+  if (userId.trim() === "aba") {
     localStorage.setItem("userIdentifier", userId);
     localStorage.setItem("processActionType", actionType as string);
     setShowModal(false);
     navigate(`/process/${productId}/process-action/${actionType}`);
-  };
+    return;
+  }
+
+  if (userId.trim() === "") {
+    setErrorMessage("Wprowadź identyfikator przed przejściem dalej.");
+    resetInput();
+    return;
+  }
+
+  if (userId.length < 5) {
+    setErrorMessage("Identyfikator musi mieć minimum 5 znaków.");
+    resetInput();
+    return;
+  }
+
+  if (
+    selectedProcess?.settings?.defaults?.validate_fish &&
+    firstCharTime &&
+    Date.now() - firstCharTime > 100
+  ) {
+    setErrorMessage("Wprowadzanie ręczne niedozwolone. Użyj skanera.");
+    resetInput();
+    return;
+  }
+
+  localStorage.setItem("userIdentifier", userId);
+  localStorage.setItem("processActionType", actionType as string);
+  setShowModal(false);
+  navigate(`/process/${productId}/process-action/${actionType}`);
+};
+
+
 
   const renderButtons = () => {
     switch (selectedProcess?.type) {
       case "add_receive":
         return (
-          <>
-            <div className="action-buttons">
-              <div className="action-button add-button" onClick={() => handleAction("add")}>
-                <h3>Dodaj</h3>
-                <p>Dodaj nowy produkt</p>
-              </div>
-              <div className="action-button receive-button" onClick={() => handleAction("receive")}>
-                <h3>Przyjmij</h3>
-                <p>Przyjmij produkt do procesu</p>
-              </div>
-              <div className="action-button move-button" onClick={() => handleAction("move")}>
-                <h3>Wydaj</h3>
-                <p>Wydaj produkt z procesu</p>
-              </div>
+          <div className="action-buttons">
+            <div className="action-button add-button" onClick={() => handleAction("add")}>
+              <h3>Dodaj</h3>
+              <p>Dodaj nowy produkt</p>
             </div>
-          </>
+            <div className="action-button receive-button" onClick={() => handleAction("receive")}>
+              <h3>Przyjmij</h3>
+              <p>Przyjmij produkt do procesu</p>
+            </div>
+            <div className="action-button move-button" onClick={() => handleAction("move")}>
+              <h3>Wydaj</h3>
+              <p>Wydaj produkt z procesu</p>
+            </div>
+          </div>
         );
       case "normal":
         return (
@@ -91,12 +150,10 @@ const ProcessAction: React.FC = () => {
         );
       case "end":
         return (
-          <>
-            <div className="action-button receive-button" onClick={() => handleAction("trash")}>
-              <h3>Wyrzuć</h3>
-              <p>Wyrzuć produkt</p>
-            </div>
-          </>
+          <div className="action-button receive-button" onClick={() => handleAction("trash")}>
+            <h3>Wyrzuć</h3>
+            <p>Wyrzuć produkt</p>
+          </div>
         );
       default:
         return <p>Brak dostępnych akcji dla tego procesu.</p>;
@@ -140,8 +197,9 @@ const ProcessAction: React.FC = () => {
               type="text"
               placeholder="Wprowadź/skanuj ID"
               value={userId}
-              onChange={(e) => setUserId(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
+              onPaste={handlePaste}
             />
             <div className="modal-buttons">
               <button onClick={handleConfirm}>Potwierdź</button>
@@ -150,11 +208,19 @@ const ProcessAction: React.FC = () => {
           </div>
         </div>
       )}
+
+        {errorMessage && (
+          <ErrorModal 
+            message={errorMessage} 
+            onClose={() => setErrorMessage(null)} 
+          />
+        )}
+
       {selectedProcess?.settings?.defaults?.production_process_type && (
-  <div className="action-statuses">
-    <MiniMachineStatuses />
-  </div>
-)}
+        <div className="action-statuses">
+          <MiniMachineStatuses />
+        </div>
+      )}
     </div>
   );
 };

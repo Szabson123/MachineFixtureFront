@@ -83,7 +83,7 @@ export const ProductObjectTable: React.FC<ProductObjectTableProps> = ({
         </thead>
         <tbody>
           {visibleObjects.map((obj) => (
-            <React.Fragment key={obj.id}>
+            <React.Fragment key={`mother-${obj.id}`}>
               <tr
                 onClick={() => obj.is_mother && onMotherClick(obj)}
                 style={{
@@ -128,15 +128,13 @@ export const ProductObjectTable: React.FC<ProductObjectTableProps> = ({
                       </thead>
                       <tbody>
                         {childrenMap[obj.id].map((child, index) => (
-                          <tr key={child.id}>
+                          <tr key={`child-${obj.id}-${index}`}>
                             <td>{index + 1}.</td>
                             <td>{child.serial_number}</td>
                             <td>{formatDateTime(child.created_at)}</td>
                             <td>{formatDate(child.production_date)}</td>
                             <td>
-                              {formatDate(
-                                child.exp_date_in_process || child.expire_date
-                              )}
+                              {formatDate(child.exp_date_in_process || child.expire_date)}
                             </td>
                           </tr>
                         ))}

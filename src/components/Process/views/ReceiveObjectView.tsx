@@ -5,12 +5,16 @@ import { useProductObjects } from "../hooks/useProductObjects";
 import { ProductObjectTable } from "../tables/ProductObjectTable";
 
 import Modal from "../shared/Modal";
+import MultiSNModal from "../modals/MultiSNModal";
 import ErrorModal from "../shared/ErrorModal";
 
 const ReceiveObjectView: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
   const selectedProcess = JSON.parse(localStorage.getItem("selectedProcess") || "{}");
+
   const isProductionProcess = selectedProcess?.settings?.defaults?.production_process_type === true;
+  const useListEndpoint = selectedProcess?.settings?.defaults?.use_list_endpoint === true;
+
   const userId = localStorage.getItem("userIdentifier") || "";
   const navigate = useNavigate();
   const [ordering, setOrdering] = useState<string>("-expire_date_final");
@@ -19,6 +23,7 @@ const ReceiveObjectView: React.FC = () => {
 
   const [expandedMotherId, setExpandedMotherId] = useState<number | null>(null);
   const [childrenMap, setChildrenMap] = useState<Record<number, any[]>>({});
+  const [showMultiModal, setShowMultiModal] = useState(false);
 
   const [formData, setFormData] = useState({
     full_sn: "",
@@ -31,7 +36,6 @@ const ReceiveObjectView: React.FC = () => {
     prev === field ? `-${field}` : field
   );
 };
-
   const [productionForm, setProductionForm] = useState({ card: "", line: "", paste: "" });
 
   const [showModal, setShowModal] = useState(false);
@@ -41,9 +45,37 @@ const ReceiveObjectView: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const productionInputRef = useRef<HTMLInputElement>(null);
 
+  const handleMultiSubmit = async (sns: string[]) => {
+  const res = await fetch(`/api/process/product-object/move-list/${selectedProcess.id}/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      full_sn: sns,
+      place_name: formData.place_name,
+      who: userId,
+      movement_type: "receive"
+    }),
+  });
+
+  if (res.ok) {
+    refetch();
+  } else {
+    const err = await res.json().catch(() => ({}));
+    setError(err.detail || "Błąd podczas odbioru wielu.");
+  }
+};
+
   const handleReceiveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch(`/api/process/product-object/move/${selectedProcess.id}/`, {
+    const endpoint = useListEndpoint 
+      ? `/api/process/product-object/move-list/${selectedProcess.id}/`
+      : `/api/process/product-object/move/${selectedProcess.id}/`;
+
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -65,6 +97,7 @@ const ReceiveObjectView: React.FC = () => {
       setError(err.detail || "Błąd podczas odbioru.");
     }
   };
+
 
   const handleContinueSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,6 +200,11 @@ const ReceiveObjectView: React.FC = () => {
         <button className="button-reset" onClick={() => setShowModal(true)}>
           {isProductionProcess ? "➕ Kontynuuj produkcję" : "➕ Odbierz obiekt"}
         </button>
+        {useListEndpoint && (
+  <button className="button-reset" onClick={() => setShowMultiModal(true)}>
+    ➕ Odbierz wiele
+  </button>
+)}
         {isProductionProcess && (
           <button
             className="button-reset-green"
@@ -188,6 +226,12 @@ const ReceiveObjectView: React.FC = () => {
         expandedMotherId={expandedMotherId}
         onSortChange={handleSortChange}
         ordering={ordering}
+      />
+
+      <MultiSNModal
+        isOpen={showMultiModal}
+        onClose={() => setShowMultiModal(false)}
+        onSubmit={handleMultiSubmit}
       />
 
       <div ref={loaderRef} style={{ height: "40px" }} />
