@@ -17,6 +17,8 @@ import SimpleCheckView from './components/Process/views/CheckObjectView';
 import MachineStatuses from './components/Process/views/MachineStatuses';
 
 import MainTable from './components/goldens/MainTable/MainTableComponent';
+
+
 function App() {
   return (
     <Router>
