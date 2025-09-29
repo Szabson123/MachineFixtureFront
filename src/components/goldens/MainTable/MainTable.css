@@ -71,14 +71,6 @@
   border-bottom: none;
 }
 
-.table-actions {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
 .table-actions input[type="text"] {
   padding: 8px 12px;
   font-size: 14px;
@@ -94,14 +86,8 @@
   font-weight: 500;
   border: none;
   border-radius: 6px;
-  background-color: #4cafef;
-  color: white;
   cursor: pointer;
   transition: background 0.2s;
-}
-
-.table-actions button:hover {
-  background-color: #3a9edc;
 }
 
 .table-container td.highlighted {
@@ -162,20 +148,104 @@
 
 .context-menu {
   position: absolute;
-  background: white;
-  border: 1px solid #ccc;
+  background: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 10px;
+  padding: 12px;
+  z-index: 1000;
+  min-width: 220px;
+  max-height: 300px;
+  overflow-y: auto; 
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  font-family: 'Inter', sans-serif;
+}
+
+.context-menu-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
   border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  padding: 6px 0;
-  list-style: none;
-  z-index: 9999;
-}
-
-.context-menu li {
-  padding: 6px 12px;
   cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s ease;
 }
 
-.context-menu li:hover {
-  background: #f5f5f5;
+.context-menu-option input {
+  margin-right: 6px;
+}
+
+.context-menu-apply {
+  margin-top: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  border: 1px solid #0077cc;
+  background: #0077cc;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.context-menu-apply:hover {
+  background: #005fa3;
+}
+
+.context-menu-loading {
+  padding: 8px;
+  text-align: center;
+  font-style: italic;
+  color: #666;
+}
+
+.table-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.filter-tag {
+  display: inline-flex;
+  align-items: center;
+  background: #ddecff;
+  border: 1px solid #e1d8ff;
+  border-radius: 14px;
+  padding: 4px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #6a5ca8;
+}
+
+.filter-remove {
+  background: none;
+  border: none;
+  margin-left: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  color: #8a7cbc;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.filter-remove:hover {
+  color: #6a5ca8;
+  background-color: #eae5ff;
 }
