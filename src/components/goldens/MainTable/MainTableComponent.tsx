@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./MainTable.css";
+import MasterSampleModal from "../Modals/MainModal";
 
 type MasterSample = {
   id: number;
@@ -35,6 +36,8 @@ const MasterSamplesTable: React.FC = () => {
   const [filterLabels, setFilterLabels] = useState<{[key: string]: { [id: number]: string };}>({});
   const [selectedFilters, setSelectedFilters] = useState<{[key: string]: number[];}>({});
   const [loadingFilters, setLoadingFilters] = useState(false);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -141,19 +144,12 @@ const MasterSamplesTable: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  useEffect(() => {
     const timeout = setTimeout(() => {
       fetchData();
     }, 300);
-    return () => clearTimeout(timeout);
-  }, [searchTerm]);
 
-  useEffect(() => {
-    fetchData();
-  }, [selectedFilters, ordering]);
+    return () => clearTimeout(timeout);
+  }, [searchTerm, selectedFilters, ordering]);
 
   return (
     <div className="all">
@@ -174,15 +170,21 @@ const MasterSamplesTable: React.FC = () => {
               ))
             )}
           </div>
-
+          <div>
           <input
             type="text"
             placeholder="Szukaj..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+                    <button
+            className="px-4 py-2 bg-green-600 text-white rounded"
+            onClick={() => setIsModalOpen(true)}
+          >
+            ➕ Dodaj Master Sample
+          </button>
+          </div>
         </div>
-
         <div className="table-scroll">
           <table>
             <thead>
@@ -300,7 +302,11 @@ const MasterSamplesTable: React.FC = () => {
                   <td>{sample.id}</td>
                   <td>{sample.client?.name}</td>
                   <td className="highlighted">{sample.project_name}</td>
-                  <td>{sample.endcodes.map((e) => e.code).join(", ")}</td>
+                  <td>
+                    {sample.endcodes.map((e) => (
+                      <div key={e.id}>{e.code}</div>
+                    ))}
+                  </td>
                   <td>
                     {sample.code_smd.map((c) => (
                       <div key={c.id}>{c.code}</div>
@@ -357,6 +363,12 @@ const MasterSamplesTable: React.FC = () => {
           </table>
         </div>
       </div>
+
+      <MasterSampleModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={() => fetchData()}
+      />
 
       {contextMenu && (
         <div
