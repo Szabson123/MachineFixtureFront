@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import "./MainTable.css";
 import MasterSampleModal from "../Modals/MainModal";
 
@@ -33,38 +33,95 @@ const MasterSamplesTable: React.FC = () => {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [filterValues, setFilterValues] = useState<{ id: number; name: string }[]>([]);
   const [contextField, setContextField] = useState<string | null>(null);
-  const [filterLabels, setFilterLabels] = useState<{[key: string]: { [id: number]: string };}>({});
-  const [selectedFilters, setSelectedFilters] = useState<{[key: string]: number[];}>({});
+  const [filterLabels, setFilterLabels] = useState<{ [key: string]: { [id: number]: string } }>({});
+  const [selectedFilters, setSelectedFilters] = useState<{ [key: string]: number[] }>({});
   const [loadingFilters, setLoadingFilters] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Infinite scroll
+  const [nextUrl, setNextUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const listAbortRef = useRef<AbortController | null>(null);
+
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const fetchData = (filters = selectedFilters, order = ordering) => {
+  const buildBaseUrl = useCallback(() => {
     const params = new URLSearchParams();
+    if (searchTerm) params.append("search", searchTerm);
 
-    if (searchTerm) {
-      params.append("search", searchTerm);
-    }
-
-    Object.entries(filters).forEach(([field, values]) => {
+    Object.entries(selectedFilters).forEach(([field, values]) => {
       if (values.length > 0) {
-        params.append(`${field}`, values.join(","));
+        params.append(field, values.join(","));
       }
     });
 
-    if (order) {
-      params.append("ordering", order);
-    }
+    if (ordering) params.append("ordering", ordering);
 
-    const url = `/api/golden-samples/mastersamples/?${params.toString()}`;
+    return `/api/golden-samples/mastersamples/?${params.toString()}`;
+  }, [searchTerm, selectedFilters, ordering]);
 
-    fetch(url)
-      .then((res) => res.json())
-      .then((json: PaginatedResponse) => setData(json.results))
-      .catch((err) => console.error("Error fetching data:", err));
-  };
+  const fetchPage = useCallback(
+    async (url: string, append: boolean) => {
+      try {
+        listAbortRef.current?.abort();
+        const ac = new AbortController();
+        listAbortRef.current = ac;
+        setIsLoading(true);
+
+        const res = await fetch(url, { signal: ac.signal });
+        if (!res.ok) throw new Error(await res.text());
+        const json: PaginatedResponse = await res.json();
+
+        setData((prev) => (append ? [...prev, ...json.results] : json.results));
+        setNextUrl(json.next);
+      } catch (err: any) {
+        if (err?.name !== "AbortError") {
+          console.error("Error fetching data:", err);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    const url = buildBaseUrl();
+    setData([]);
+    setNextUrl(null);
+    fetchPage(url, false);
+  }, [buildBaseUrl, fetchPage]);
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first.isIntersecting && !isLoading && nextUrl) {
+          fetchPage(nextUrl, true);
+        }
+      },
+      { root: document.querySelector(".table-scroll"), rootMargin: "200px", threshold: 0.01 }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [isLoading, nextUrl, fetchPage]);
+
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleContextMenu = (
     e: React.MouseEvent,
@@ -77,7 +134,10 @@ const MasterSamplesTable: React.FC = () => {
 
     setLoadingFilters(true);
     fetch(endpoint)
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+      })
       .then((json) => {
         setFilterValues(json);
         setFilterLabels((prev) => ({
@@ -97,16 +157,14 @@ const MasterSamplesTable: React.FC = () => {
 
   const toggleFilter = (id: number) => {
     if (!contextField) return;
-
     setSelectedFilters((prev) => {
       const current = prev[contextField] || [];
       const exists = current.includes(id);
-      return {
+      const updated = {
         ...prev,
-        [contextField]: exists
-          ? current.filter((v) => v !== id)
-          : [...current, id],
+        [contextField]: exists ? current.filter((v) => v !== id) : [...current, id],
       };
+      return updated;
     });
   };
 
@@ -133,24 +191,6 @@ const MasterSamplesTable: React.FC = () => {
     setOrdering(newOrder);
   };
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setContextMenu(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      fetchData();
-    }, 300);
-
-    return () => clearTimeout(timeout);
-  }, [searchTerm, selectedFilters, ordering]);
-
   return (
     <div className="all">
       <div className="table-container">
@@ -163,6 +203,7 @@ const MasterSamplesTable: React.FC = () => {
                   <button
                     className="filter-remove"
                     onClick={() => removeFilter(field, id)}
+                    title="Usuń filtr"
                   >
                     ✕
                   </button>
@@ -170,21 +211,22 @@ const MasterSamplesTable: React.FC = () => {
               ))
             )}
           </div>
-          <div>
-          <input
-            type="text"
-            placeholder="Szukaj..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-                    <button
-            className="px-4 py-2 bg-green-600 text-white rounded"
-            onClick={() => setIsModalOpen(true)}
-          >
-            ➕ Dodaj Master Sample
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              type="text"
+              placeholder="Szukaj..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <button
+              className="px-4 py-2 bg-green-600 text-white rounded"
+              onClick={() => setIsModalOpen(true)}
+            >
+              ➕ Dodaj Master Sample
+            </button>
           </div>
         </div>
+
         <div className="table-scroll">
           <table>
             <thead>
@@ -313,7 +355,7 @@ const MasterSamplesTable: React.FC = () => {
                     ))}
                   </td>
                   <td>
-                    <span className="testtest">{sample.process_name?.name}</span>
+                    <span className="chip-process">{sample.process_name?.name}</span>
                   </td>
                   <td className="highlighted">{sample.sn}</td>
                   <td>
@@ -352,22 +394,38 @@ const MasterSamplesTable: React.FC = () => {
                   </td>
                 </tr>
               ))}
-              {data.length === 0 && (
+
+              {data.length === 0 && !isLoading && (
                 <tr>
                   <td colSpan={13} style={{ textAlign: "center", padding: "20px" }}>
                     Brak wyników
                   </td>
                 </tr>
               )}
+
+              {isLoading && (
+                <tr>
+                  <td colSpan={13} style={{ textAlign: "center", padding: "16px" }}>
+                    Ładowanie...
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
+
+          <div ref={sentinelRef} style={{ height: 1 }} />
         </div>
       </div>
 
       <MasterSampleModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={() => fetchData()}
+        onSuccess={() => {
+          const url = buildBaseUrl();
+          setData([]);
+          setNextUrl(null);
+          fetchPage(url, false);
+        }}
       />
 
       {contextMenu && (
@@ -384,9 +442,7 @@ const MasterSamplesTable: React.FC = () => {
                 <label key={val.id} className="context-menu-option">
                   <input
                     type="checkbox"
-                    checked={
-                      selectedFilters[contextField!]?.includes(val.id) || false
-                    }
+                    checked={selectedFilters[contextField!]?.includes(val.id) || false}
                     onChange={() => toggleFilter(val.id)}
                   />
                   {val.name}
