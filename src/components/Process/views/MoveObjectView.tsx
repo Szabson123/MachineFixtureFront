@@ -295,14 +295,6 @@ const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint, 
                 required
               />
             </label>
-            <label>
-              Kto wysłał:
-              <input
-                value={formData.who}
-                onChange={(e) => setFormData({ ...formData, who: e.target.value })}
-                required
-              />
-            </label>
             <div className="modal-footer">
               <button className="button-reset" type="submit">Zapisz</button>
               <button className="btn-normal" type="button" onClick={() => setShowMoveModal(false)}>Zamknij</button>

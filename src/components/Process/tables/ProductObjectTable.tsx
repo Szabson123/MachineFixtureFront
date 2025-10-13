@@ -20,7 +20,6 @@ export const ProductObjectTable: React.FC<ProductObjectTableProps> = ({
   const formatDate = (d: string) => new Date(d).toLocaleDateString("pl-PL");
   const formatDateTime = (d: string) => new Date(d).toLocaleString("pl-PL");
 
-  // 1) Zbierz ID matek obecnych w tej liście
   const motherIds = new Set<number>(
     objects.filter((o) => o.is_mother).map((o) => o.id)
   );

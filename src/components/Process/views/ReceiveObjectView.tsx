@@ -1,4 +1,3 @@
-// src/views/ReceiveObjectView.tsx
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useProductObjects } from "../hooks/useProductObjects";
@@ -45,29 +44,30 @@ const ReceiveObjectView: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const productionInputRef = useRef<HTMLInputElement>(null);
 
-  const handleMultiSubmit = async (sns: string[]) => {
-  const res = await fetch(`/api/process/product-object/move-list/${selectedProcess.id}/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
-    },
-    credentials: "include",
-    body: JSON.stringify({
-      full_sn: sns,
-      place_name: formData.place_name,
-      who: userId,
-      movement_type: "receive"
-    }),
-  });
+  const handleMultiSubmit = async (sns: string[], placeName: string) => {
+    const res = await fetch(`/api/process/product-object/move-list/${selectedProcess.id}/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        full_sn: sns,
+        place_name: placeName,
+        who: userId,
+        movement_type: "receive"
+      }),
+    });
 
-  if (res.ok) {
-    refetch();
-  } else {
-    const err = await res.json().catch(() => ({}));
-    setError(err.detail || "Błąd podczas odbioru wielu.");
-  }
-};
+    if (res.ok) {
+      refetch();
+      setShowMultiModal(false);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      setError(err.detail || "Błąd podczas odbioru wielu.");
+    }
+  };
 
   const handleReceiveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,7 +202,7 @@ const ReceiveObjectView: React.FC = () => {
         </button>
         {useListEndpoint && (
   <button className="button-reset" onClick={() => setShowMultiModal(true)}>
-    ➕ Odbierz wiele
+    ➕ Pobierz z magazynku
   </button>
 )}
         {isProductionProcess && (

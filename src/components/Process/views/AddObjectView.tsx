@@ -258,7 +258,6 @@ const AddObjectView: React.FC = () => {
 
       {showToast && <Toast message="✅ Obiekt dodany!" onClose={() => setShowToast(false)} />}
 
-      {/* Istniejący modal dodawania wielu SN -> /bulk-create/ (bez matki) */}
       {showMultiModal && (
         <Modal title="Dodaj wiele SN" onClose={() => setShowMultiModal(false)} hideFooter>
           <form
