@@ -247,3 +247,37 @@
   color: #6a5ca8;
   background-color: #eae5ff;
 }
+
+.sn-cell {
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; 
+}
+
+.context-add-btn {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  text-align: left;
+  border: none;
+  background: #f5f5f5;
+  color: #0077cc;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.context-add-btn:hover {
+  background: #e6f0ff;
+}
+
+.context-separator {
+  border-bottom: 1px solid #ddd;
+  margin: 6px 0;
+}
+
+.g-submodal-content.small {
+  width: 300px;
+  padding: 16px;
+}

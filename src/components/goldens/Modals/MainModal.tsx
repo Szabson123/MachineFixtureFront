@@ -12,12 +12,68 @@ type Option = { id: number; name: string };
 type Sample = {
   sn: string;
   master_type: number | "";
-  _uid?: string;
+  details?: string;        // opis próbki (opcjonalny)
+  _uid?: string;           // lokalny klucz do UI
 };
 
 const toNumberOrEmpty = (v: string) => (v === "" ? "" : Number(v));
-
 const uid = () => Math.random().toString(36).slice(2, 9);
+
+/** Mini-modal do edycji opisu pojedyńczej próbki */
+const SampleDetailsModal: React.FC<{
+  isOpen: boolean;
+  title?: string;
+  initial: string;
+  onSave: (text: string) => void;
+  onClose: () => void;
+}> = ({ isOpen, title = "Opis próbki", initial, onSave, onClose }) => {
+  const [text, setText] = useState(initial);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setText(initial);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isOpen, initial, onClose]);
+
+  if (!isOpen) return null;
+
+  const handleSave = () => onSave(text.trim());
+
+  return (
+    <div className="g-modal-overlay" aria-modal="true" role="dialog">
+      <div className="g-submodal-content">
+        <div className="g-submodal-header">
+          <h3 className="g-submodal-title">{title}</h3>
+          <button className="g-modal-close-btn" onClick={onClose} aria-label="Zamknij">×</button>
+        </div>
+        <div className="g-submodal-body">
+          <textarea
+            className="g-details-textarea"
+            placeholder="Wklej/napisz opis próbki. Enter = zapisz i zamknij, Shift+Enter = nowa linia."
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSave();
+              }
+            }}
+            rows={10}
+            autoFocus
+          />
+        </div>
+        <div className="g-submodal-actions">
+          <button className="g-cancel-small" type="button" onClick={onClose}>Anuluj</button>
+          <button className="g-save-small" type="button" onClick={handleSave}>Zapisz</button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const [clients, setClients] = useState<Option[]>([]);
@@ -35,12 +91,18 @@ const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess })
   const [codeSmd, setCodeSmd] = useState<string>("");
   const [endcodes, setEndcodes] = useState<string>("");
 
+  // Top-level details (pozostaje)
+  const [globalDetails, setGlobalDetails] = useState<string>("");
+
   const [samples, setSamples] = useState<Sample[]>([
-    { sn: "", master_type: "", _uid: uid() },
+    { sn: "", master_type: "", details: "", _uid: uid() },
   ]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // stan mini-modala per-sample
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
 
   const resetForm = () => {
     setClient("");
@@ -51,18 +113,18 @@ const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess })
     setPcbRevCode("R1");
     setCodeSmd("");
     setEndcodes("");
-    setSamples([{ sn: "", master_type: "", _uid: uid() }]);
+    setGlobalDetails("");
+    setSamples([{ sn: "", master_type: "", details: "", _uid: uid() }]);
     setSubmitError(null);
+    setEditingIdx(null);
   };
 
   useEffect(() => {
     if (!isOpen) return;
 
-    // ESC zamyka modal
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && handleClose();
     document.addEventListener("keydown", onKey);
 
-    // równoległe pobieranie słowników
     (async () => {
       try {
         const [c, p, d, t] = await Promise.all([
@@ -97,26 +159,34 @@ const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess })
 
   if (!isOpen) return null;
 
-  const handleSampleChange = (index: number, field: keyof Sample, value: Sample[typeof field]) => {
+  const handleSampleChange = <K extends keyof Sample>(index: number, field: K, value: Sample[K]) => {
     setSamples((prev) =>
       prev.map((s, i) => (i === index ? { ...s, [field]: value } : s))
     );
   };
 
   const addSample = () => {
-    setSamples((prev) => [...prev, { sn: "", master_type: "", _uid: uid() }]);
+    setSamples((prev) => [...prev, { sn: "", master_type: "", details: "", _uid: uid() }]);
   };
 
   const removeSample = (index: number) => {
     setSamples((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const uniq = <T,>(arr: T[]) => Array.from(new Set(arr));
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
     setIsSubmitting(true);
 
-    const uniq = <T,>(arr: T[]) => Array.from(new Set(arr));
+    const samplesPayload = samples
+      .map((s) => ({
+        sn: s.sn.trim(),
+        master_type: s.master_type,
+        ...(s.details && s.details.trim() ? { details: s.details.trim() } : {}),
+      }))
+      .filter((s) => s.sn !== "" && s.master_type !== "");
 
     const payload = {
       client,
@@ -125,29 +195,16 @@ const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess })
       project_name: projectName.trim(),
       expire_date: expireDate,
       pcb_rev_code: pcbRevCode.trim(),
-      code_smd: uniq(
-        codeSmd
-          .split(",")
-          .map((c) => c.trim())
-          .filter(Boolean)
-      ),
-      endcodes: uniq(
-        endcodes
-          .split(",")
-          .map((c) => c.trim())
-          .filter(Boolean)
-      ),
-      samples: samples
-        .map((s) => ({ sn: s.sn.trim(), master_type: s.master_type }))
-        .filter((s) => s.sn !== "" && s.master_type !== ""),
+      details: globalDetails.trim() || undefined, // top-level details (opcjonalne)
+      code_smd: uniq(codeSmd.split(",").map((c) => c.trim()).filter(Boolean)),
+      endcodes: uniq(endcodes.split(",").map((c) => c.trim()).filter(Boolean)),
+      samples: samplesPayload,
     };
 
     try {
       const response = await fetch("/api/golden-samples/mastersamples/create/", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
@@ -262,6 +319,7 @@ const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess })
               />
             </div>
 
+            {/* Code SMD / Endcodes */}
             <div className="g-form-group">
               <label className="g-form-label">Code SMD</label>
               <input
@@ -287,6 +345,7 @@ const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess })
             </div>
           </div>
 
+          {/* Samples */}
           <div className="g-samples-section">
             <div className="g-section-header">
               <h3 className="g-section-title">Samples</h3>
@@ -297,38 +356,52 @@ const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess })
             </div>
 
             <div className="g-samples-list">
-              {samples.map((sample, idx) => (
-                <div key={sample._uid ?? idx} className="g-sample-row">
-                  <div className="g-sample-inputs">
-                    <input
-                      type="text"
-                      className="g-form-input"
-                      placeholder="Serial Number (SN)"
-                      value={sample.sn}
-                      onChange={(e) => handleSampleChange(idx, "sn", e.target.value)}
-                    />
-                    <select
-                      className="g-form-select"
-                      value={sample.master_type}
-                      onChange={(e) => handleSampleChange(idx, "master_type", toNumberOrEmpty(e.target.value))}
-                    >
-                      <option value="">-- Wybierz typ --</option>
-                      {types.map((t) => (
-                        <option key={t.id} value={String(t.id)}>{t.name}</option>
-                      ))}
-                    </select>
+              {samples.map((sample, idx) => {
+                const hasDetails = !!(sample.details && sample.details.trim());
+                return (
+                  <div key={sample._uid ?? idx} className="g-sample-row">
+                    <div className="g-sample-inputs">
+                      <input
+                        type="text"
+                        className="g-form-input"
+                        placeholder="Serial Number (SN)"
+                        value={sample.sn}
+                        onChange={(e) => handleSampleChange(idx, "sn", e.target.value)}
+                      />
+                      <select
+                        className="g-form-select"
+                        value={sample.master_type}
+                        onChange={(e) => handleSampleChange(idx, "master_type", toNumberOrEmpty(e.target.value))}
+                      >
+                        <option value="">-- Wybierz typ --</option>
+                        {types.map((t) => (
+                          <option key={t.id} value={String(t.id)}>{t.name}</option>
+                        ))}
+                      </select>
+
+                      {/* Przycisk otwierający osobny modal opisu */}
+                      <button
+                        type="button"
+                        className="g-details-btn"
+                        onClick={() => setEditingIdx(idx)}
+                        title={hasDetails ? "Edytuj opis próbki" : "Dodaj opis próbki"}
+                      >
+                        📝 {hasDetails && <span className="g-details-dot" aria-label="opis dodany" />}
+                      </button>
+
+                      {samples.length > 1 && (
+                        <button
+                          type="button"
+                          className="g-remove-sample-btn"
+                          onClick={() => removeSample(idx)}
+                        >
+                          ❌ Usuń
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {samples.length > 1 && (
-                    <button
-                      type="button"
-                      className="g-remove-sample-btn"
-                      onClick={() => removeSample(idx)}
-                    >
-                      ❌ Usuń
-                    </button>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -348,6 +421,19 @@ const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess })
           </div>
         </form>
       </div>
+
+      {editingIdx !== null && (
+        <SampleDetailsModal
+          isOpen={true}
+          initial={samples[editingIdx]?.details ?? ""}
+          title={`Opis próbki #${editingIdx + 1}${samples[editingIdx]?.sn ? ` (SN: ${samples[editingIdx].sn})` : ""}`}
+          onSave={(text) => {
+            handleSampleChange(editingIdx, "details", text);
+            setEditingIdx(null);
+          }}
+          onClose={() => setEditingIdx(null)}
+        />
+      )}
     </div>
   );
 };

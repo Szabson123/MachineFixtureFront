@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import "./MainTable.css";
 import MasterSampleModal from "../Modals/MainModal";
+import MasterSampleEditModal from "../Modals/MasterSampleEditModal";
 
 type MasterSample = {
   id: number;
@@ -25,10 +26,21 @@ type PaginatedResponse = {
   results: MasterSample[];
 };
 
+const FIELD_LABELS: Record<string, string> = {
+  client: "klienta",
+  process_name: "proces",
+  master_type: "typ",
+};
+
 const MasterSamplesTable: React.FC = () => {
   const [data, setData] = useState<MasterSample[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [ordering, setOrdering] = useState<string>("");
+  const [editId, setEditId] = useState<number | null>(null);
+
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
 
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [filterValues, setFilterValues] = useState<{ id: number; name: string }[]>([]);
@@ -155,6 +167,59 @@ const MasterSamplesTable: React.FC = () => {
       .finally(() => setLoadingFilters(false));
   };
 
+  const handleAddNewItem = async () => {
+  if (!contextField || !newItemName.trim()) return;
+  setIsAdding(true);
+
+  const endpointMap: Record<string, string> = {
+    client: "/api/golden-samples/mastersamples/client-name/",
+    process_name: "/api/golden-samples/mastersamples/process-name/",
+    master_type: "/api/golden-samples/mastersamples/type-name/",
+  };
+
+  const endpoint = endpointMap[contextField];
+  if (!endpoint) return;
+
+try {
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: newItemName.trim() }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+
+  setNewItemName("");
+  setIsAddModalOpen(false);
+
+  fetch(endpoint)
+      .then(async (res) => {
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+      })
+      .then((json) => {
+        setFilterValues(json);
+        setFilterLabels((prev) => ({
+          ...prev,
+          [contextField!]: json.reduce(
+            (acc: { [id: number]: string }, item: { id: number; name: string }) => {
+              acc[item.id] = item.name;
+              return acc;
+            },
+            {}
+          ),
+        }));
+      })
+      .catch((err) => console.error("Błąd odświeżania listy:", err));
+
+    setContextMenu(null);
+
+  } catch (err) {
+    console.error("Błąd przy dodawaniu nowego elementu:", err);
+  } finally {
+    setIsAdding(false);
+  }
+};
+
   const toggleFilter = (id: number) => {
     if (!contextField) return;
     setSelectedFilters((prev) => {
@@ -238,7 +303,7 @@ const MasterSamplesTable: React.FC = () => {
                   ID {ordering === "id" && "↑"} {ordering === "-id" && "↓"}
                 </th>
                 <th
-                  className="table-title sortable"
+                  className="table-title sortable filterable"
                   onClick={() => handleSort("client__name")}
                   onContextMenu={(e) =>
                     handleContextMenu(
@@ -248,7 +313,7 @@ const MasterSamplesTable: React.FC = () => {
                     )
                   }
                 >
-                  Klient {ordering === "client__name" && "↑"}{" "}
+                  Klient ⚙ {ordering === "client__name" && "↑"}{" "}
                   {ordering === "-client__name" && "↓"}
                 </th>
                 <th
@@ -271,7 +336,7 @@ const MasterSamplesTable: React.FC = () => {
                     )
                   }
                 >
-                  Proces {ordering === "process_name__name" && "↑"}{" "}
+                  Proces ⚙{ordering === "process_name__name" && "↑"}{" "}
                   {ordering === "-process_name__name" && "↓"}
                 </th>
                 <th
@@ -291,7 +356,7 @@ const MasterSamplesTable: React.FC = () => {
                     )
                   }
                 >
-                  Typ {ordering === "master_type__name" && "↑"}{" "}
+                  Typ ⚙{ordering === "master_type__name" && "↑"}{" "}
                   {ordering === "-master_type__name" && "↓"}
                 </th>
                 <th
@@ -326,7 +391,7 @@ const MasterSamplesTable: React.FC = () => {
                     )
                   }
                 >
-                  Wydział {ordering === "departament__name" && "↑"}{" "}
+                  Wydział ⚙{ordering === "departament__name" && "↑"}{" "}
                   {ordering === "-departament__name" && "↓"}
                 </th>
                 <th
@@ -340,7 +405,11 @@ const MasterSamplesTable: React.FC = () => {
             </thead>
             <tbody>
               {data.map((sample) => (
-                <tr key={sample.id}>
+                <tr
+                  key={sample.id}
+                  className="row-clickable"
+                  onClick={() => setEditId(sample.id)}
+                >
                   <td>{sample.id}</td>
                   <td>{sample.client?.name}</td>
                   <td className="highlighted">{sample.project_name}</td>
@@ -354,44 +423,26 @@ const MasterSamplesTable: React.FC = () => {
                       <div key={c.id}>{c.code}</div>
                     ))}
                   </td>
-                  <td>
-                    <span className="chip-process">{sample.process_name?.name}</span>
+                  <td><span className="chip-process">{sample.process_name?.name}</span></td>
+                  <td className="highlighted sn-cell" title={sample.sn}>
+                    {sample.sn}
                   </td>
-                  <td className="highlighted">{sample.sn}</td>
                   <td>
-                    <span
-                      className="badge"
-                      style={{ backgroundColor: sample.master_type?.color }}
-                    >
+                    <span className="badge" style={{ backgroundColor: sample.master_type?.color }}>
                       {sample.master_type?.name}
                     </span>
                   </td>
-                  <td>
-                    {new Date(sample.date_created).toLocaleDateString("pl-PL", {
-                      year: "numeric",
-                      month: "2-digit",
-                      day: "2-digit",
-                    })}
-                  </td>
+                  <td>{new Date(sample.date_created).toLocaleDateString("pl-PL",{year:"numeric",month:"2-digit",day:"2-digit"})}</td>
                   <td className="highlighted">
-                    {new Date(sample.expire_date).toLocaleDateString("pl-PL", {
-                      year: "numeric",
-                      month: "2-digit",
-                      day: "2-digit",
-                    })}
+                    {new Date(sample.expire_date).toLocaleDateString("pl-PL",{year:"numeric",month:"2-digit",day:"2-digit"})}
                   </td>
                   <td>{sample.pcb_rev_code}</td>
                   <td>
-                    <span
-                      className="badge"
-                      style={{ backgroundColor: sample.departament?.color }}
-                    >
+                    <span className="badge" style={{ backgroundColor: sample.departament?.color }}>
                       {sample.departament?.name}
                     </span>
                   </td>
-                  <td>
-                    {sample.created_by?.first_name} {sample.created_by?.last_name}
-                  </td>
+                  <td>{sample.created_by?.first_name} {sample.created_by?.last_name}</td>
                 </tr>
               ))}
 
@@ -428,6 +479,60 @@ const MasterSamplesTable: React.FC = () => {
         }}
       />
 
+       <MasterSampleEditModal
+        id={editId}
+        isOpen={!!editId}
+        onClose={() => setEditId(null)}
+        onSuccess={(updatedRow) => {
+          setData((prev) => prev.map((it) => (it.id === updatedRow.id ? { ...it, ...updatedRow } : it)));
+        }}
+      />
+
+      {isAddModalOpen && (
+        <div className="g-modal-overlay" aria-modal="true" role="dialog">
+          <div className="g-submodal-content small">
+            <div className="g-submodal-header">
+              <h3 className="g-submodal-title">
+                Dodaj nowy {FIELD_LABELS[contextField || ""] || contextField}
+              </h3>
+              <button
+                className="g-modal-close-btn"
+                onClick={() => setIsAddModalOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="g-submodal-body">
+              <input
+                type="text"
+                className="g-form-input"
+                placeholder="Wpisz nazwę..."
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAddNewItem();
+                }}
+                autoFocus
+              />
+            </div>
+            <div className="g-submodal-actions">
+              <button
+                className="g-cancel-small"
+                onClick={() => setIsAddModalOpen(false)}
+              >
+                Anuluj
+              </button>
+              <button
+                className="g-save-small"
+                onClick={handleAddNewItem}
+                disabled={isAdding}
+              >
+                {isAdding ? "Zapisywanie..." : "Zapisz"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {contextMenu && (
         <div
           ref={menuRef}
@@ -437,18 +542,30 @@ const MasterSamplesTable: React.FC = () => {
           {loadingFilters ? (
             <div className="context-menu-loading">Ładowanie...</div>
           ) : (
-            <>
-              {filterValues.map((val) => (
-                <label key={val.id} className="context-menu-option">
-                  <input
-                    type="checkbox"
-                    checked={selectedFilters[contextField!]?.includes(val.id) || false}
-                    onChange={() => toggleFilter(val.id)}
-                  />
-                  {val.name}
-                </label>
-              ))}
-            </>
+           <>
+            {["client", "process_name", "master_type"].includes(contextField || "") && (
+              <>
+                <button
+                  className="context-add-btn"
+                  onClick={() => setIsAddModalOpen(true)}
+                >
+                  ➕ Dodaj nowy
+                </button>
+                <div className="context-separator" />
+              </>
+            )}
+
+            {filterValues.map((val) => (
+              <label key={val.id} className="context-menu-option">
+                <input
+                  type="checkbox"
+                  checked={selectedFilters[contextField!]?.includes(val.id) || false}
+                  onChange={() => toggleFilter(val.id)}
+                />
+                {val.name}
+              </label>
+            ))}
+          </>
           )}
         </div>
       )}
