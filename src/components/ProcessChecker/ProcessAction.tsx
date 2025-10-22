@@ -130,8 +130,8 @@ const handleConfirm = () => {
               <p>Przyjmij produkt do procesu</p>
             </div>
             <div className="action-button move-button" onClick={() => handleAction("move")}>
-              <h3>Wydaj</h3>
-              <p>Wydaj produkt z procesu</p>
+              <h3>Wyciągnij</h3>
+              <p>Wyciągnij produkt z procesu</p>
             </div>
           </div>
         );
@@ -143,7 +143,7 @@ const handleConfirm = () => {
               <p>Dodaj produkt do procesu</p>
             </div>
             <div className="action-button move-button" onClick={() => handleAction("move")}>
-              <h3>Wydaj</h3>
+              <h3>Wyciągnij</h3>
               <p>Przenieś produkt dalej</p>
             </div>
           </>

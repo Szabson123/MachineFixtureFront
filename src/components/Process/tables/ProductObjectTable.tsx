@@ -58,8 +58,8 @@ export const ProductObjectTable: React.FC<ProductObjectTableProps> = ({
             <th onClick={() => onSortChange("serial_number")}>
               Serial {renderSortArrow("serial_number")}
             </th>
-            <th onClick={() => onSortChange("product__name")}>
-              Produkt {renderSortArrow("product__name")}
+            <th onClick={() => onSortChange("sub_product__name")}>
+              Produkt {renderSortArrow("sub_product__name")}
             </th>
             <th onClick={() => onSortChange("created_at")}>
               Dodano {renderSortArrow("created_at")}

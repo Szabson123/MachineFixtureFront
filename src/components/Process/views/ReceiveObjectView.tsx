@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useProductObjects } from "../hooks/useProductObjects";
 import { ProductObjectTable } from "../tables/ProductObjectTable";
 
+import Toast from "../shared/Toast";
 import Modal from "../shared/Modal";
 import MultiSNModal from "../modals/MultiSNModal";
 import ErrorModal from "../shared/ErrorModal";
@@ -23,6 +24,9 @@ const ReceiveObjectView: React.FC = () => {
   const [expandedMotherId, setExpandedMotherId] = useState<number | null>(null);
   const [childrenMap, setChildrenMap] = useState<Record<number, any[]>>({});
   const [showMultiModal, setShowMultiModal] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [showRetoolingModal, setShowRetoolingModal] = useState(false);
+
 
   const [formData, setFormData] = useState({
     full_sn: "",
@@ -44,6 +48,13 @@ const ReceiveObjectView: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const productionInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+  if (error) {
+    setFormData({ full_sn: "", place_name: "", who: userId });
+    setProductionForm({ card: "", line: "", paste: "" });
+  }
+}, [error]);
+
   const handleMultiSubmit = async (sns: string[], placeName: string) => {
     const res = await fetch(`/api/process/product-object/move-list/${selectedProcess.id}/`, {
       method: "POST",
@@ -63,6 +74,7 @@ const ReceiveObjectView: React.FC = () => {
     if (res.ok) {
       refetch();
       setShowMultiModal(false);
+      setShowToast(true);
     } else {
       const err = await res.json().catch(() => ({}));
       setError(err.detail || "Błąd podczas odbioru wielu.");
@@ -92,12 +104,13 @@ const ReceiveObjectView: React.FC = () => {
       setFormData({ full_sn: "", place_name: "", who: userId });
       refetch();
       setShowModal(false);
+      setShowToast(true);
     } else {
       const err = await res.json().catch(() => ({}));
       setError(err.detail || "Błąd podczas odbioru.");
+      setFormData({ full_sn: "", place_name: "", who: userId });
     }
   };
-
 
   const handleContinueSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,9 +131,11 @@ const ReceiveObjectView: React.FC = () => {
       setFormData({ full_sn: "", place_name: "", who: userId });
       refetch();
       setShowModal(false);
+      setShowToast(true);
     } else {
       const err = await res.json().catch(() => ({}));
       setError(err.detail || "Błąd podczas kontynuacji produkcji.");
+      setFormData({ full_sn: "", place_name: "", who: userId });
     }
   };
 
@@ -146,11 +161,43 @@ const ReceiveObjectView: React.FC = () => {
       setProductionForm({ card: "", line: "", paste: "" });
       refetch();
       setShowProductionModal(false);
+      setShowToast(true);
     } else {
       const err = await res.json().catch(() => ({}));
       setError(err.detail || "Błąd podczas uruchamiania nowej produkcji.");
+      setProductionForm({ card: "", line: "", paste: "" });
     }
   };
+
+  const handleRetoolingSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  const res = await fetch(`/api/process/retooling/${selectedProcess.id}/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      movement_type: "retooling",
+      who: userId,
+      place_name: productionForm.line,
+      production_card: productionForm.card,
+    }),
+  });
+
+  if (res.ok) {
+    setProductionForm({ card: "", line: "", paste: "" });
+    refetch();
+    setShowRetoolingModal(false);
+    setShowToast(true);
+  } else {
+    const err = await res.json().catch(() => ({}));
+    setError(err.error || err.detail || err.message || "Błąd podczas przezbrojenia.");
+    setProductionForm({ card: "", line: "", paste: "" });
+  }
+};
 
   const handleMotherClick = async (obj: any) => {
     if (expandedMotherId === obj.id) {
@@ -201,16 +248,24 @@ const ReceiveObjectView: React.FC = () => {
           {isProductionProcess ? "➕ Kontynuuj produkcję" : "➕ Odbierz obiekt"}
         </button>
         {useListEndpoint && (
-  <button className="button-reset" onClick={() => setShowMultiModal(true)}>
-    ➕ Pobierz z magazynku
-  </button>
-)}
+          <button className="button-reset" onClick={() => setShowMultiModal(true)}>
+            ➕ Pobierz z magazynku
+          </button>
+        )}
         {isProductionProcess && (
           <button
             className="button-reset-green"
             onClick={() => setShowProductionModal(true)}
           >
             🏁 Rozpocznij nową produkcje
+          </button>
+        )}
+        {isProductionProcess && (
+          <button
+            className="button-reset-orange"
+            onClick={() => setShowRetoolingModal(true)}
+          >
+            ⚙️ Przezbrojenie
           </button>
         )}
       </div>
@@ -264,13 +319,16 @@ const ReceiveObjectView: React.FC = () => {
           </form>
         </Modal>
       )}
+      {showToast && (
+  <Toast message="✅ Operacja zakończona pomyślnie!" onClose={() => setShowToast(false)} />
+)}
 
       {/* New Production Modal */}
       {showProductionModal && (
         <Modal title="Nowa produkcja" onClose={() => setShowProductionModal(false)} hideFooter>
           <form onSubmit={handleStartNewProduction}>
             <label>
-              Karta produkcji:
+              Kod PCB (Karta Produktu):
               <input
                 ref={productionInputRef}
                 value={productionForm.card}
@@ -300,6 +358,33 @@ const ReceiveObjectView: React.FC = () => {
             <div className="modal-footer">
               <button className="button-reset" type="submit">Rozpocznij</button>
               <button className="btn-normal" type="button" onClick={() => setShowProductionModal(false)}>Anuluj</button>
+            </div>
+          </form>
+        </Modal>
+      )}
+      {showRetoolingModal && (
+        <Modal title="Przezbrojenie" onClose={() => setShowRetoolingModal(false)} hideFooter>
+          <form onSubmit={handleRetoolingSubmit}>
+            <label>
+              Kod PCB (Karta Produktu):
+              <input
+                value={productionForm.card}
+                onChange={(e) => setProductionForm({ ...productionForm, card: e.target.value })}
+                required
+              />
+            </label>
+
+            <label>
+              Linia:
+              <input
+                value={productionForm.line}
+                onChange={(e) => setProductionForm({ ...productionForm, line: e.target.value })}
+                required
+              />
+            </label>
+            <div className="modal-footer">
+              <button className="button-reset" type="submit">Zatwierdź</button>
+              <button className="btn-normal" type="button" onClick={() => setShowRetoolingModal(false)}>Anuluj</button>
             </div>
           </form>
         </Modal>

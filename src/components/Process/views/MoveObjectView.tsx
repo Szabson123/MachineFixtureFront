@@ -5,6 +5,8 @@ import { ProductObjectTable } from "../tables/ProductObjectTable";
 import Modal from "../shared/Modal";
 import ErrorModal from "../shared/ErrorModal";
 import "./views.css";
+import Toast from "../shared/Toast";
+
 
 const MoveObjectView: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -12,6 +14,7 @@ const MoveObjectView: React.FC = () => {
   const userId = localStorage.getItem("userIdentifier") || "";
   const navigate = useNavigate();
   const [ordering, setOrdering] = useState<string>("-expire_date_final");
+  const [showToast, setShowToast] = useState(false);
 
 
   const endpoint = `/api/process/${productId}/${selectedProcess.id}/product-objects/?place_isnull=true`;
@@ -125,6 +128,7 @@ const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint, 
       if (res.ok) {
         setFormData({ full_sn: "", who: userId, place_name: "" });
         refetch();
+        setShowToast(true);
 
         if (expectingChild && data?.is_mother === true && typeof data?.id === "number") {
           try {
@@ -241,6 +245,7 @@ const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint, 
           } catch {}
         }
         setShowMultiToMotherModal(false);
+        setShowToast(true);
       } else {
         setError(parseApiError(data) || "Błąd dodawania dzieci.");
       }
@@ -248,6 +253,14 @@ const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint, 
       setError("Błąd sieci.");
     }
   };
+
+  useEffect(() => {
+  if (error) {
+    setFormData({ full_sn: "", who: userId, place_name: "" });
+    setMultiSNs([""]);
+    setMultiErrors([]);
+  }
+}, [error]);
 
   return (
     <div className="fixture-table-container">
@@ -372,6 +385,9 @@ const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint, 
           </form>
         </Modal>
       )}
+      {showToast && (
+  <Toast message="✅ Operacja zakończona pomyślnie!" onClose={() => setShowToast(false)} />
+)}
 
       {error && <ErrorModal message={error} onClose={() => setError("")} />}
     </div>
