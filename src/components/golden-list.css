@@ -151,7 +151,14 @@
 .status-icon.bad { background: #dc3545; }
 .status-icon.calib { background: #007bff; }
 
-
+.go-to-main-btn{
+  padding: 10px 16px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color .2s ease;
+}
 
 .add-pattern-btn {
     display: flex;
