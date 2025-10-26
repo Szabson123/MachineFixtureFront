@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import "./golden-list.css";
-import AddGoldenModal from "./AddGoldenModal";
-import EditGoldenModal from "./EditGoldenModal";
-import AddVariantModal from "./AddVariantModal";
+
+import { useNavigate } from "react-router-dom";
+
 
 type Golden = {
   id: number;
@@ -40,9 +40,7 @@ const GoldenList: React.FC = () => {
   const [managedGoldens, setManagedGoldens] = useState<ManagedGolden[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchSn, setSearchSn] = useState<string>("");
-  const [showModal, setShowModal] = useState(false);
-  const [editingGolden, setEditingGolden] = useState<ManagedGolden | null>(null);
-  const [showVariantModal, setShowVariantModal] = useState(false);
+  const navigate = useNavigate();
 
   const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -199,9 +197,6 @@ const GoldenList: React.FC = () => {
         <div className="panel">
           <div className="panel-header">
             <h3>Kody końcowe</h3>
-            <button onClick={() => setShowVariantModal(true)} className="add-pattern-btn">
-              ➕ Kod końcowy
-            </button>
           </div>
           <input
             className="search-input"
@@ -235,18 +230,6 @@ const GoldenList: React.FC = () => {
         <div className="panel">
           <div className="panel-header">
             <h3>{selectedVariantCode ? `Wzorce dla: ${selectedVariantCode}` : "Wzorce"}</h3>
-            <button
-              onClick={() => {
-                if (!selectedVariantId || !selectedVariantCode) {
-                  alert("Najpierw wybierz wariant!");
-                  return;
-                }
-                setShowModal(true);
-              }}
-              className="add-pattern-btn"
-            >
-              ➕ Dodaj
-            </button>
           </div>
           <div className="list-container">
             {!selectedVariantId ? (
@@ -258,7 +241,6 @@ const GoldenList: React.FC = () => {
                 <div
                   key={golden.id}
                   className="list-item"
-                  onClick={() => setEditingGolden(golden as ManagedGolden)}
                 >
                   <div className="golden-code-container">
                     <span
@@ -287,7 +269,12 @@ const GoldenList: React.FC = () => {
         <div className="panel">
           <div className="panel-header">
             <h3>Wszystkie Wzorce</h3>
+                      <button 
+          className="go-to-main-btn"
+          onClick={() => navigate("/goldens/main-table")}
+        >Szczegóły</button>
           </div>
+
           <input
             className="search-input"
             placeholder="Szukaj po SN..."
@@ -296,7 +283,7 @@ const GoldenList: React.FC = () => {
           />
           <div className="list-container" ref={managedScrollRef}>
             {managedGoldens.map((golden) => (
-              <div key={golden.id} className="list-item" onClick={() => setEditingGolden(golden)}>
+              <div key={golden.id} className="list-item">
                 <div className="golden-code-container">
                   <span
                     className={`status-icon ${getGoldenTypeStyle(golden.type_golden)}`}
@@ -320,41 +307,6 @@ const GoldenList: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {showModal && selectedVariantCode && (
-        <AddGoldenModal
-          variantCode={selectedVariantCode}
-          onClose={() => setShowModal(false)}
-          onSuccess={() => {
-            setShowModal(false);
-            if (selectedVariantId) fetchGoldensForVariant(selectedVariantId);
-            fetchInitialGoldens();
-          }}
-        />
-      )}
-
-      {editingGolden && (
-        <EditGoldenModal
-          golden={editingGolden}
-          onClose={() => setEditingGolden(null)}
-          onSuccess={() => {
-            setEditingGolden(null);
-            if (selectedVariantId) fetchGoldensForVariant(selectedVariantId);
-            fetchInitialGoldens();
-          }}
-        />
-      )}
-
-      {showVariantModal && (
-        <AddVariantModal
-          onClose={() => setShowVariantModal(false)}
-          onSuccess={() => {
-            setShowVariantModal(false);
-            fetchVariants();
-          }}
-        />
-      )}
-
       <div className="footer-creditt">
         Created by Krzysztof Balcerzak & Szymon Żaba
       </div>

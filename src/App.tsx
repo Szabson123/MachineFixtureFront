@@ -16,12 +16,16 @@ import ProductLogList from './components/Process/views/ProductLogList';
 import SimpleCheckView from './components/Process/views/CheckObjectView';
 import MachineStatuses from './components/Process/views/MachineStatuses';
 
+import MainTable from './components/goldens/MainTable/MainTableComponent';
+
+
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<SSEComponent />} />
         <Route path="/goldens" element={<GoldenList />} />
+        <Route path="/goldens/main-table" element={<MainTable/>} />
         <Route path="/process" element={<ProductList />} />
         <Route path="/traceability" element={<ProductLogList />} />
         <Route path="/machine-statuses" element={<MachineStatuses />} />
