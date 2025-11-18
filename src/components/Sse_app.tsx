@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import './FixtureTable.css';
 
 interface Fixture {
@@ -12,6 +11,11 @@ interface Fixture {
   cycles_limit: number;
 }
 
+function getCSRFCookie(name = 'csrftoken'): string {
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
 const FixtureTable: React.FC = () => {
   const [fixtures, setFixtures] = useState<Fixture[]>([]);
   const [sortField, setSortField] = useState<string>('');
@@ -20,11 +24,22 @@ const FixtureTable: React.FC = () => {
 
   const fetchFixtures = async () => {
     try {
-      const ordering = sortField ? (sortDirection === 'asc' ? sortField : `-${sortField}`) : '';
-      const res = await axios.get<Fixture[]>('/api/machine/get_info/', {
-        params: { ordering, search: searchQuery },
+      const ordering =
+        sortField ? (sortDirection === 'asc' ? sortField : `-${sortField}`) : '';
+
+      const params = new URLSearchParams();
+      if (ordering) params.set('ordering', ordering);
+      if (searchQuery) params.set('search', searchQuery);
+
+      const res = await fetch(`/api/machine/get_info/?${params.toString()}`, {
+        method: 'GET',
+        credentials: 'include',
       });
-      setFixtures(res.data);
+
+      if (!res.ok) throw new Error(`GET failed: ${res.status}`);
+
+      const data: Fixture[] = await res.json();
+      setFixtures(data);
     } catch (err) {
       console.error(err);
     }
@@ -33,8 +48,12 @@ const FixtureTable: React.FC = () => {
   useEffect(() => {
     fetchFixtures();
 
-    const eventSource = new EventSource('/api/events/?channel=fixture-updates');
+    const eventSource = new EventSource('/api/events/?channel=fixture-updates', {
+      withCredentials: true,
+    } as any);
+
     eventSource.onmessage = () => fetchFixtures();
+    eventSource.onerror = (e) => console.error('SSE error', e);
 
     return () => eventSource.close();
   }, [sortField, sortDirection, searchQuery]);
@@ -63,19 +82,33 @@ const FixtureTable: React.FC = () => {
 
     try {
       const url = `/api/clear-counter/${fixtureId}/`;
-      const res = await axios.post(
-        url,
-        { password: inputPassword },
-        { headers: { 'Content-Type': 'application/json' } }
-      );
+      const csrf = getCSRFCookie();
 
-      if (res.status === 200) {
-        alert('Licznik został wyczyszczony');
-        fetchFixtures();
+      const res = await fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrf,
+        },
+        body: JSON.stringify({ password: inputPassword }),
+      });
+
+      if (!res.ok) {
+        let message = 'Błąd podczas czyszczenia licznika';
+        try {
+          const payload = await res.json();
+          message = payload?.error || payload?.detail || message;
+        } catch {
+        }
+        throw new Error(message);
       }
+
+      alert('Licznik został wyczyszczony');
+      fetchFixtures();
     } catch (err: any) {
       console.error(err);
-      alert(err.response?.data?.error || 'Błąd podczas czyszczenia licznika');
+      alert(err?.message || 'Błąd podczas czyszczenia licznika');
     }
   };
 
@@ -95,7 +128,7 @@ const FixtureTable: React.FC = () => {
 
   return (
     <div className="fixture-table-container">
-      <h1 className="table-title">Ilość Cykli Fixtur</h1>
+      <h1 className="table-title-counter">Ilość Cykli Fixtur</h1>
 
       <input
         type="text"
@@ -130,13 +163,13 @@ const FixtureTable: React.FC = () => {
                   {fixture.last_maint_date ? (
                     new Date(fixture.last_maint_date).toLocaleDateString('pl-PL')
                   ) : (
-                    <span className="italic-muted">Nigdy nie wykonano przeglądu</span>
+                    <span className="italic-muted">Brak Danych</span>
                   )}
                 </td>
                 <td>{new Intl.NumberFormat().format(fixture.counter_last_maint)}</td>
                 <td>
                   <div className="progress-row">
-                  <div
+                    <div
                       className="progress-container"
                       title={`Limit: ${fixture.counter_last_maint} / ${fixture.cycles_limit}`}
                     >

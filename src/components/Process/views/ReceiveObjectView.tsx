@@ -44,6 +44,7 @@ const ReceiveObjectView: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [showProductionModal, setShowProductionModal] = useState(false);
   const [error, setError] = useState("");
+  const isStencilProductionProcess = selectedProcess?.settings?.defaults?.stencil_production_process_type === true;
 
   const inputRef = useRef<HTMLInputElement>(null);
   const productionInputRef = useRef<HTMLInputElement>(null);
@@ -136,6 +137,35 @@ const ReceiveObjectView: React.FC = () => {
       const err = await res.json().catch(() => ({}));
       setError(err.detail || "Błąd podczas kontynuacji produkcji.");
       setFormData({ full_sn: "", place_name: "", who: userId });
+    }
+  };
+
+    const handleStencilSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const res = await fetch(`/api/process/start-new-prod-stencil/${selectedProcess.id}/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        full_sn: formData.full_sn,
+        place_name: formData.place_name,
+        who: userId,
+        movement_type: "receive",
+      }),
+    });
+
+    if (res.ok) {
+      setFormData({ full_sn: "", place_name: "", who: userId });
+      refetch();
+      setShowModal(false);
+      setShowToast(true);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      setError(err.detail || "Błąd rozpoczęcia produkcji stencil.");
     }
   };
 
@@ -244,30 +274,48 @@ const ReceiveObjectView: React.FC = () => {
         >
           ← Powrót
         </button>
-        <button className="button-reset" onClick={() => setShowModal(true)}>
-          {isProductionProcess ? "➕ Kontynuuj produkcję" : "➕ Odbierz obiekt"}
-        </button>
-        {useListEndpoint && (
-          <button className="button-reset" onClick={() => setShowMultiModal(true)}>
-            ➕ Pobierz z magazynku
-          </button>
-        )}
-        {isProductionProcess && (
-          <button
-            className="button-reset-green"
-            onClick={() => setShowProductionModal(true)}
-          >
-            🏁 Rozpocznij nową produkcje
-          </button>
-        )}
-        {isProductionProcess && (
-          <button
-            className="button-reset-orange"
-            onClick={() => setShowRetoolingModal(true)}
-          >
-            ⚙️ Przezbrojenie
-          </button>
-        )}
+          {/* STENCIL – tylko jeden przycisk */}
+          {isStencilProductionProcess && (
+            <button
+              className="button-reset-green"
+              onClick={() => setShowModal(true)}
+            >
+              🏁 Rozpocznij nową produkcję (Stencil)
+            </button>
+          )}
+
+          {/* NORMAL + PRODUCTION – tylko gdy NIE stencil */}
+          {!isStencilProductionProcess && (
+            <>
+              <button className="button-reset" onClick={() => setShowModal(true)}>
+                {isProductionProcess ? "➕ Kontynuuj produkcję" : "➕ Odbierz obiekt"}
+              </button>
+
+              {useListEndpoint && (
+                <button className="button-reset" onClick={() => setShowMultiModal(true)}>
+                  ➕ Pobierz z magazynku
+                </button>
+              )}
+
+              {isProductionProcess && (
+                <button
+                  className="button-reset-green"
+                  onClick={() => setShowProductionModal(true)}
+                >
+                  🏁 Rozpocznij nową produkcję
+                </button>
+              )}
+
+              {isProductionProcess && (
+                <button
+                  className="button-reset-orange"
+                  onClick={() => setShowRetoolingModal(true)}
+                >
+                  ⚙️ Przezbrojenie
+                </button>
+              )}
+            </>
+          )}
       </div>
 
       <p className="progress-label margin-plus">
@@ -294,7 +342,15 @@ const ReceiveObjectView: React.FC = () => {
       {/* Continue / Receive Modal */}
       {showModal && (
         <Modal title={isProductionProcess ? "Kontynuuj produkcję" : "Dodaj produkt"} onClose={() => setShowModal(false)} hideFooter>
-          <form onSubmit={isProductionProcess ? handleContinueSubmit : handleReceiveSubmit}>
+          <form 
+            onSubmit={
+              isStencilProductionProcess
+                ? handleStencilSubmit
+                : isProductionProcess
+                  ? handleContinueSubmit
+                  : handleReceiveSubmit
+            }
+          >
             <label>
               Obiekt:
               <input

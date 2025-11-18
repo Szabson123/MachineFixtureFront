@@ -8,6 +8,7 @@ import './ProductProcesses.css';
 import { useParams } from 'react-router-dom';
 import { GreenSquareNode, OrangeSquareNode, RedSquareNode, BlueSquareNode } from '../ProcessNewGen/NodesComp';
 import { useNavigate } from 'react-router-dom';
+import HiddenEdge from './HiddenEdge';
 
 const nodeTypes = {
   normal: GreenSquareNode,
@@ -21,6 +22,10 @@ const typeMap: Record<string, string> = {
   condition: 'condition',
   end: 'end',
   add_receive: 'add_receive',
+};
+
+const edgeTypes = {
+  hidden: HiddenEdge
 };
 
 function transformGraphData(apiData: any) {
@@ -116,10 +121,11 @@ const FlowProcess: React.FC = () => {
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
         panOnDrag
         selectionOnDrag
-        nodeTypes={nodeTypes}
         onNodeClick={handleNodeClick}
       >
       </ReactFlow>
