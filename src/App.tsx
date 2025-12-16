@@ -17,7 +17,9 @@ import SimpleCheckView from './components/Process/views/CheckObjectView';
 import MachineStatuses from './components/Process/views/MachineStatuses';
 
 import MainTable from './components/goldens/MainTable/MainTableComponent';
-
+import AdminMainPage from './components/admin/admin-process/admin-main-page';
+import AdminProcessesPage from './components/admin/admin-process/admin-process-list';
+import AdminProcessDetailsPage from './components/admin/admin-process/admin-process-mistakes';
 
 function App() {
   return (
@@ -40,6 +42,10 @@ function App() {
         <Route path="/process/:productId/process-action/check" element={<SimpleCheckView />} />
 
         <Route path="/new-flow" element={<FlowEditor />} />
+
+        <Route path="/admin/main-page" element={<AdminMainPage />} />
+        <Route path="/admin/process-list" element={<AdminProcessesPage />} />
+        <Route path="/admin/mistake-list/:processId" element={<AdminProcessDetailsPage />} />
       </Routes>
     </Router>
   );

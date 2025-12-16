@@ -84,6 +84,7 @@ const ProductLogList: React.FC = () => {
     <div className="t-container">
       <form onSubmit={handleSubmit} className="t-form">
         <input
+          autoFocus
           type="text"
           value={sn}
           onChange={(e) => setSn(e.target.value)}
