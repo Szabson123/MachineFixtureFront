@@ -14,11 +14,25 @@ const ReceiveObjectView: React.FC = () => {
 
   const isProductionProcess = selectedProcess?.settings?.defaults?.production_process_type === true;
   const useListEndpoint = selectedProcess?.settings?.defaults?.use_list_endpoint === true;
-
+  const fields = selectedProcess?.settings?.fields ?? null;
   const userId = localStorage.getItem("userIdentifier") || "";
   const navigate = useNavigate();
   const [ordering, setOrdering] = useState<string>("-expire_date_final");
-  const endpoint = `/api/process/${productId}/${selectedProcess.id}/product-objects/?place_isnull=false`;
+
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  const searchParam = debouncedSearch ? `&search=${debouncedSearch}` : "";
+  const endpoint = `/api/process/${productId}/${selectedProcess.id}/product-objects/?place_isnull=false${searchParam}`;
+  
   const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint, ordering);
 
   const [expandedMotherId, setExpandedMotherId] = useState<number | null>(null);
@@ -35,10 +49,11 @@ const ReceiveObjectView: React.FC = () => {
   });
 
   const handleSortChange = (field: string) => {
-  setOrdering((prev) =>
-    prev === field ? `-${field}` : field
-  );
-};
+    setOrdering((prev) =>
+      prev === field ? `-${field}` : field
+    );
+  };
+
   const [productionForm, setProductionForm] = useState({ card: "", line: "", paste: "" });
 
   const [showModal, setShowModal] = useState(false);
@@ -50,11 +65,11 @@ const ReceiveObjectView: React.FC = () => {
   const productionInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-  if (error) {
-    setFormData({ full_sn: "", place_name: "", who: userId });
-    setProductionForm({ card: "", line: "", paste: "" });
-  }
-}, [error]);
+    if (error) {
+      setFormData({ full_sn: "", place_name: "", who: userId });
+      setProductionForm({ card: "", line: "", paste: "" });
+    }
+  }, [error]);
 
   const handleMultiSubmit = async (sns: string[], placeName: string) => {
     const res = await fetch(`/api/process/product-object/move-list/${selectedProcess.id}/`, {
@@ -274,7 +289,6 @@ const ReceiveObjectView: React.FC = () => {
         >
           ← Powrót
         </button>
-          {/* STENCIL – tylko jeden przycisk */}
           {isStencilProductionProcess && (
             <button
               className="button-reset-green"
@@ -284,7 +298,6 @@ const ReceiveObjectView: React.FC = () => {
             </button>
           )}
 
-          {/* NORMAL + PRODUCTION – tylko gdy NIE stencil */}
           {!isStencilProductionProcess && (
             <>
               <button className="button-reset" onClick={() => setShowModal(true)}>
@@ -322,6 +335,16 @@ const ReceiveObjectView: React.FC = () => {
         Liczba obiektów: {totalCount}
       </p>
 
+      <div style={{ marginBottom: "10px", display: "flex", gap: "10px", alignItems: "center" }}>
+        <input
+          type="text"
+          placeholder="Szukaj"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ccc", minWidth: "250px" }}
+        />
+      </div>
+
       <ProductObjectTable
         objects={objects}
         childrenMap={childrenMap}
@@ -329,6 +352,7 @@ const ReceiveObjectView: React.FC = () => {
         expandedMotherId={expandedMotherId}
         onSortChange={handleSortChange}
         ordering={ordering}
+        fields={fields}
       />
 
       <MultiSNModal

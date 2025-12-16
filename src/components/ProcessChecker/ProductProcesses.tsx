@@ -64,10 +64,12 @@ const FlowProcess: React.FC = () => {
   const navigate = useNavigate();
 
   const handleNodeClick = (_: any, node: Node) => {
-    const fullNode = node.data?.full;
-  
-    if (fullNode) {
-      localStorage.setItem('selectedProcess', JSON.stringify({
+  const fullNode = node.data?.full;
+
+  if (fullNode) {
+    localStorage.setItem(
+      "selectedProcess",
+      JSON.stringify({
         id: fullNode.id,
         name: fullNode.label,
         type: fullNode.type,
@@ -75,12 +77,15 @@ const FlowProcess: React.FC = () => {
           defaults: fullNode.defaults,
           starts: fullNode.starts,
           endings: fullNode.endings,
-        }
-      }));
-    }
-  
-    navigate(`/process/${productId}/process-action`);
-  };
+          fields: fullNode.fields || null,
+          autoCheck: fullNode.autoCheck ?? false,
+        },
+      })
+    );
+  }
+
+  navigate(`/process/${productId}/process-action`);
+};
 
   useEffect(() => {
     const fetchData = async () => {

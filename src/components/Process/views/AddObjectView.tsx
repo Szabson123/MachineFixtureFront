@@ -18,7 +18,7 @@ const AddObjectView: React.FC = () => {
   const [ordering, setOrdering] = useState<string>("-expire_date_final");
   const endpoint = `/api/process/${productId}/${selectedProcess.id}/product-objects/?place_isnull=false`;
   const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint, ordering);
-
+  const fields = selectedProcess?.settings?.fields ?? null;
   // baza ścieżki do API (dla czytelności)
   const basePath = `/api/process/${productId}/${selectedProcess.id}`;
 
@@ -205,6 +205,7 @@ const AddObjectView: React.FC = () => {
         onMotherClick={handleMotherClick}
         expandedMotherId={expandedMotherId}
         ordering={ordering}
+        fields={fields}
         onSortChange={(field) => {
           // kliknięcie w nagłówek
           if (ordering === field) {

@@ -18,7 +18,7 @@ const MoveObjectView: React.FC = () => {
 
 
   const endpoint = `/api/process/${productId}/${selectedProcess.id}/product-objects/?place_isnull=true`;
-const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint, ordering);
+  const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint, ordering);
 
   const expectingChild: boolean = !!selectedProcess?.settings?.starts?.expecting_child;
 
@@ -29,7 +29,7 @@ const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint, 
   });
 
   const [showMoveModal, setShowMoveModal] = useState(false);
-
+  const fields = selectedProcess?.settings?.fields ?? null;
   const [showMultiToMotherModal, setShowMultiToMotherModal] = useState(false);
   const [motherFullSn, setMotherFullSn] = useState("");
   const [motherShortSn, setMotherShortSn] = useState("");
@@ -293,6 +293,7 @@ const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint, 
         expandedMotherId={expandedMotherId}
         onSortChange={handleSortChange}
         ordering={ordering}
+        fields={fields} 
       />
       <div ref={loaderRef} style={{ height: "40px" }} />
 

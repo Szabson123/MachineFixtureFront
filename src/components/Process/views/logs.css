@@ -1,122 +1,187 @@
 .t-container {
-    max-width: 95%;
-    margin: 2rem auto;
-    padding: 1rem;
-    font-family: 'Segoe UI', sans-serif;
-  }
-  
-  .t-form {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 2rem;
-    justify-content: center;
-  }
-  
-  .t-input {
-    flex: 0 0 300px;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 1rem;
-  }
-  
-  .t-button {
-    background-color: #007bff;
-    color: white;
-    padding: 0.5rem 1.2rem;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-  }
-  
-  .t-button:hover {
-    background-color: #0056b3;
-  }
-  
-  .t-log-list {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
-    padding: 0;
-    margin: 0;
-    list-style: none;
-  }
-  
-  .t-log-item {
-    background: #fefefe;
-    border: 2px solid #dbe4ff;
-    padding: 1.5rem 2rem;
-    width: 100%;
-    max-width: 1000px; /* szersze kafelki */
-    border-radius: 14px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    position: relative;
-  }
-  
-  .t-log-item:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-  }
-  
-  .t-log-entry {
-    font-size: 1rem;
-    color: #155724;
-    background-color: #d4edda;
-    border-left: 6px solid #28a745;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    margin-bottom: 0.6rem;
-  }
-  
-  .t-log-exit {
-    font-size: 1rem;
-    color: #0a3358;
-    background-color: #b3d7ff;
-    border-left: 6px solid #1098e7;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    margin-bottom: 0.6rem;
-  }
-  
-  .t-log-title {
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 0.2rem;
-  }
-  
-  .t-log-place {
-    font-size: 1.1rem;
-    color: #555;
-    margin-bottom: 0.5rem;
-  }
-  
-  .t-log-sn {
-    font-size: 0.75rem;
-    color: #777;
-    word-break: break-word;
-    margin-top: 0.6rem;
-    border-top: 1px dashed #ccc;
-    padding-top: 0.4rem;
-    font-family: monospace;
-  }
-  
-
-.center-red{
-    color: red;
-    display: flex;
-    justify-content: center;
-  }
-
-.loading{
-    display: flex;
-    justify-content: center;
+  max-width: 95%;
+  margin: 2rem auto;
+  padding: 1rem;
+  font-family: 'Segoe UI', 'Roboto', sans-serif;
+  color: #333;
 }
 
-.margin-plus{
-    margin-bottom: 20px;
-    margin-top: 10px;
+.t-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  justify-content: center;
+}
+
+.t-input {
+  flex: 0 0 300px;
+  padding: 0.6rem 1rem;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.t-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+.t-button {
+  background-color: #007bff;
+  color: white;
+  padding: 0.6rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.t-button:hover {
+  background-color: #0056b3;
+}
+
+.t-log-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.t-log-item {
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-left: 12px solid #6c757d; 
+  padding: 0;
+  width: 100%;
+  max-width: 800px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.t-log-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.t-log-item.type-create {
+  border-left-color: #17a2b8;
+}
+.t-log-item.type-create .t-badge {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.t-log-item.type-receive {
+  border-left-color: #28a745;
+}
+.t-log-item.type-receive .t-badge {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.t-log-item.type-move {
+  border-left-color: #fd7e14;
+}
+.t-log-item.type-move .t-badge {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.t-log-item.type-trash {
+  border-left-color: #dc3545;
+}
+.t-log-item.type-trash .t-badge {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.t-log-item.type-other {
+  border-left-color: #6c757d;
+}
+.t-log-item.type-other .t-badge {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.t-card-header {
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.t-timestamp {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.t-badge {
+  padding: 0.35rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.t-card-body {
+  padding: 1.2rem 1.5rem;
+}
+
+.t-log-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #212529;
+  margin-bottom: 0.4rem;
+}
+
+.t-log-place {
+  font-size: 1.1rem;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.t-card-footer {
+  padding: 0.8rem 1.5rem;
+  background-color: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.t-user-info {
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.t-log-sn {
+  font-size: 0.75rem;
+  color: #868e96;
+  font-family: 'Consolas', 'Monaco', monospace;
+  word-break: break-all;
+}
+
+.center-red {
+  color: #dc3545;
+  text-align: center;
+  font-weight: 500;
+}
+
+.loading {
+  text-align: center;
+  color: #666;
+  font-style: italic;
 }
