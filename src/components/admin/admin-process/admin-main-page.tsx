@@ -1,6 +1,7 @@
 import React from 'react';
 import './admin-main-page.css';
 import { useNavigate } from 'react-router-dom';
+
 const Icons = {
   Processes: () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -31,17 +32,20 @@ interface DashboardItem {
   IconComponent: React.FC;
   themeClass: 'blue' | 'orange' | 'teal';
   count?: number;
+  path: string;
 }
 
 const AdminMainPage: React.FC = () => {
-  
-    const dashboardItems: DashboardItem[] = [
+  const navigate = useNavigate();
+
+  const dashboardItems: DashboardItem[] = [
     {
       id: 'processes',
       title: 'Procesy',
       description: 'Kafelki Procesowe do sprawdzania błędów',
       themeClass: 'blue',
       IconComponent: Icons.Processes,
+      path: '/admin/process-list',
     },
     {
       id: 'groups',
@@ -49,6 +53,7 @@ const AdminMainPage: React.FC = () => {
       description: 'Tutaj włączamy i wyłączamy zabijanie aplikacji',
       themeClass: 'orange',
       IconComponent: Icons.Groups,
+      path: '/admin/groups',
     },
     {
       id: 'products',
@@ -56,13 +61,11 @@ const AdminMainPage: React.FC = () => {
       description: 'Wszystkie objekty/produkty w aplikacji',
       themeClass: 'teal',
       IconComponent: Icons.Products,
+      path: '/admin/products',
     },
   ];
-    const navigate = useNavigate(); 
 
-    const handleProcessClick = () => {
-    navigate(`/admin/process-list`);
-  };
+
   return (
     <div className="a-container">
       <header className="a-header">
@@ -72,7 +75,14 @@ const AdminMainPage: React.FC = () => {
       
       <div className="a-grid">
         {dashboardItems.map((item) => (
-          <div key={item.id} className={`a-card a-${item.themeClass}`} onClick={() => handleProcessClick()} role="button" tabIndex={0}>
+          <div 
+            key={item.id} 
+            className={`a-card a-${item.themeClass}`} 
+            role="button" 
+            tabIndex={0}
+            onClick={() => navigate(item.path)} 
+            onKeyDown={(e) => { if (e.key === 'Enter') navigate(item.path) }}
+          >
             <div className="a-icon-wrapper">
               <item.IconComponent />
             </div>

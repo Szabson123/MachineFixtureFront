@@ -87,7 +87,7 @@ const AdminProcessesPage: React.FC = () => {
                   </div>
 
                   <div className="p-column p-col-secondary">
-                    <span className="p-caption">Obszar / Stanowisko</span>
+                    <span className="p-caption">Obszar</span>
                     <span className="p-label-tag">{item.label}</span>
                   </div>
 

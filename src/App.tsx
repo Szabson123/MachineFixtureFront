@@ -20,6 +20,9 @@ import MainTable from './components/goldens/MainTable/MainTableComponent';
 import AdminMainPage from './components/admin/admin-process/admin-main-page';
 import AdminProcessesPage from './components/admin/admin-process/admin-process-list';
 import AdminProcessDetailsPage from './components/admin/admin-process/admin-process-mistakes';
+import AdminPlaceDetailsPage from './components/admin/admin-process/admin-place-mistake';
+import AdminGroupsPage from './components/admin/admin-process/admin-groups';
+import GroupPlacesGrid from './components/admin/admin-process/admin-group-place';
 
 function App() {
   return (
@@ -46,6 +49,10 @@ function App() {
         <Route path="/admin/main-page" element={<AdminMainPage />} />
         <Route path="/admin/process-list" element={<AdminProcessesPage />} />
         <Route path="/admin/mistake-list/:processId" element={<AdminProcessDetailsPage />} />
+        <Route path="/admin/place-list/:placeId" element={<AdminPlaceDetailsPage />} />
+        <Route path="/admin/groups" element={<AdminGroupsPage />} />
+        <Route path="/admin/groups/:groupId/places" element={<GroupPlacesGrid />} />
+
       </Routes>
     </Router>
   );

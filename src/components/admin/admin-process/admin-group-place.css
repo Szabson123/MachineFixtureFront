@@ -1,0 +1,158 @@
+.gp-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: #333;
+}
+
+.gp-header-wrapper {
+  display: flex;
+  align-items: center;
+  margin-bottom: 40px;
+  gap: 20px;
+}
+
+.gp-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.gp-back-btn:hover {
+  color: #1e293b;
+}
+
+.gp-title {
+  font-size: 1.8rem;
+  margin: 0;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* --- GRID SYSTEM --- */
+.gp-grid {
+  display: grid;
+  /* Dokładnie 3 kolumny o równej szerokości */
+  grid-template-columns: repeat(3, 1fr); 
+  gap: 30px;
+}
+
+/* Responsywność: na mniejszych ekranach 2 lub 1 kolumna */
+@media (max-width: 992px) {
+  .gp-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .gp-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- CARD STYLE --- */
+.gp-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  padding: 24px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.gp-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.gp-icon {
+  width: 48px;
+  height: 48px;
+  background-color: #f0f9ff;
+  color: #0284c7;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.gp-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.gp-card-title {
+  margin: 0 0 20px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.gp-status-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+.gp-label {
+  color: #64748b;
+}
+
+.gp-status-text {
+  font-weight: 700;
+}
+.gp-status-on { color: #dc2626; } /* Czerwony dla aktywnego zabijania */
+.gp-status-off { color: #16a34a; } /* Zielony dla spokoju */
+
+/* --- TOGGLE SWITCH --- */
+.gp-toggle-container {
+  width: 56px;
+  height: 30px;
+  border-radius: 15px;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.3s;
+  margin: 0 auto;
+}
+
+.gp-toggle-on { background-color: #ef4444; }
+.gp-toggle-off { background-color: #cbd5e1; }
+.gp-toggle-loading { opacity: 0.6; cursor: wait; }
+
+.gp-toggle-circle {
+  width: 24px;
+  height: 24px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 3px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.gp-toggle-circle-on { transform: translateX(29px); }
+.gp-toggle-circle-off { transform: translateX(3px); }
+
+.gp-empty {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 1.1rem;
+  margin-top: 40px;
+}
