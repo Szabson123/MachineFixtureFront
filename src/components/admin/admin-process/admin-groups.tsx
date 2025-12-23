@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./admin-groups.css";
+import { getCSRFToken } from "../../../utils";
 
 export interface StatusGroup {
   id: number;
@@ -14,7 +15,7 @@ const StatusGroupsTable = () => {
   const [data, setData] = useState<StatusGroup[]>([]);
   const [loadingId, setLoadingId] = useState<number | null>(null);
   
-  const navigate = useNavigate(); // <--- 2. Hook do nawigacji
+  const navigate = useNavigate();
 
   const fetchData = async () => {
     try {
@@ -41,6 +42,7 @@ const StatusGroupsTable = () => {
             method: "PATCH",
             headers: {
             "Content-Type": "application/json",
+            "X-CSRFToken": getCSRFToken() || "",
             },
             credentials: "include",
             body: JSON.stringify({

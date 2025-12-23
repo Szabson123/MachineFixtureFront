@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./admin-group-place.css";
+import { getCSRFToken } from "../../../utils";
 
 interface AppToKill {
   killing_flag: boolean;
@@ -9,7 +10,7 @@ interface AppToKill {
 interface Place {
   id: number;
   name: string;
-  apptokill: AppToKill;
+  apptokill: AppToKill | null;
   label: string
 }
 
@@ -52,6 +53,7 @@ const GroupPlacesGrid = () => {
         method: "PATCH",
         headers: {
             "Content-Type": "application/json",
+            "X-CSRFToken": getCSRFToken() || "",
         },
         credentials: "include",
         body: JSON.stringify({
@@ -67,10 +69,9 @@ const GroupPlacesGrid = () => {
             place.id === placeId
               ? {
                   ...place,
-                  apptokill: {
-                    ...place.apptokill,
+                    apptokill: {
                     killing_flag: !currentFlag,
-                  },
+                    },
                 }
               : place
           )
@@ -101,7 +102,7 @@ const GroupPlacesGrid = () => {
       {/* Grid z kafelkami */}
       <div className="gp-grid">
         {places.map((place) => {
-          const isKilling = place.apptokill.killing_flag;
+          const isKilling = place.apptokill?.killing_flag ?? false;
           const isLoading = loadingId === place.id;
 
           return (
