@@ -1,9 +1,9 @@
-// src/views/ReceiveObjectView.tsx
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useProductObjects } from "../hooks/useProductObjects";
 import { ProductObjectTable } from "../tables/ProductObjectTable";
 
+import Toast from "../shared/Toast";
 import Modal from "../shared/Modal";
 import MultiSNModal from "../modals/MultiSNModal";
 import ErrorModal from "../shared/ErrorModal";
@@ -14,16 +14,33 @@ const ReceiveObjectView: React.FC = () => {
 
   const isProductionProcess = selectedProcess?.settings?.defaults?.production_process_type === true;
   const useListEndpoint = selectedProcess?.settings?.defaults?.use_list_endpoint === true;
-
+  const fields = selectedProcess?.settings?.fields ?? null;
   const userId = localStorage.getItem("userIdentifier") || "";
   const navigate = useNavigate();
   const [ordering, setOrdering] = useState<string>("-expire_date_final");
-  const endpoint = `/api/process/${productId}/${selectedProcess.id}/product-objects/?place_isnull=false`;
+
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  const searchParam = debouncedSearch ? `&search=${debouncedSearch}` : "";
+  const endpoint = `/api/process/${productId}/${selectedProcess.id}/product-objects/?place_isnull=false${searchParam}`;
+  
   const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint, ordering);
 
   const [expandedMotherId, setExpandedMotherId] = useState<number | null>(null);
   const [childrenMap, setChildrenMap] = useState<Record<number, any[]>>({});
   const [showMultiModal, setShowMultiModal] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [showRetoolingModal, setShowRetoolingModal] = useState(false);
+
 
   const [formData, setFormData] = useState({
     full_sn: "",
@@ -32,42 +49,53 @@ const ReceiveObjectView: React.FC = () => {
   });
 
   const handleSortChange = (field: string) => {
-  setOrdering((prev) =>
-    prev === field ? `-${field}` : field
-  );
-};
+    setOrdering((prev) =>
+      prev === field ? `-${field}` : field
+    );
+  };
+
   const [productionForm, setProductionForm] = useState({ card: "", line: "", paste: "" });
 
   const [showModal, setShowModal] = useState(false);
   const [showProductionModal, setShowProductionModal] = useState(false);
   const [error, setError] = useState("");
+  const isStencilProductionProcess = selectedProcess?.settings?.defaults?.stencil_production_process_type === true;
 
   const inputRef = useRef<HTMLInputElement>(null);
   const productionInputRef = useRef<HTMLInputElement>(null);
 
-  const handleMultiSubmit = async (sns: string[]) => {
-  const res = await fetch(`/api/process/product-object/move-list/${selectedProcess.id}/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
-    },
-    credentials: "include",
-    body: JSON.stringify({
-      full_sn: sns,
-      place_name: formData.place_name,
-      who: userId,
-      movement_type: "receive"
-    }),
-  });
+  useEffect(() => {
+    if (error) {
+      setFormData({ full_sn: "", place_name: "", who: userId });
+      setProductionForm({ card: "", line: "", paste: "" });
+    }
+  }, [error]);
 
-  if (res.ok) {
-    refetch();
-  } else {
-    const err = await res.json().catch(() => ({}));
-    setError(err.detail || "Błąd podczas odbioru wielu.");
-  }
-};
+  const handleMultiSubmit = async (sns: string[], placeName: string) => {
+    const res = await fetch(`/api/process/product-object/move-list/${selectedProcess.id}/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        full_sn: sns,
+        place_name: placeName,
+        who: userId,
+        movement_type: "receive"
+      }),
+    });
+
+    if (res.ok) {
+      refetch();
+      setShowMultiModal(false);
+      setShowToast(true);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      setError(err.detail || "Błąd podczas odbioru wielu.");
+    }
+  };
 
   const handleReceiveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,12 +120,13 @@ const ReceiveObjectView: React.FC = () => {
       setFormData({ full_sn: "", place_name: "", who: userId });
       refetch();
       setShowModal(false);
+      setShowToast(true);
     } else {
       const err = await res.json().catch(() => ({}));
       setError(err.detail || "Błąd podczas odbioru.");
+      setFormData({ full_sn: "", place_name: "", who: userId });
     }
   };
-
 
   const handleContinueSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,9 +147,40 @@ const ReceiveObjectView: React.FC = () => {
       setFormData({ full_sn: "", place_name: "", who: userId });
       refetch();
       setShowModal(false);
+      setShowToast(true);
     } else {
       const err = await res.json().catch(() => ({}));
       setError(err.detail || "Błąd podczas kontynuacji produkcji.");
+      setFormData({ full_sn: "", place_name: "", who: userId });
+    }
+  };
+
+    const handleStencilSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const res = await fetch(`/api/process/start-new-prod-stencil/${selectedProcess.id}/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        full_sn: formData.full_sn,
+        place_name: formData.place_name,
+        who: userId,
+        movement_type: "receive",
+      }),
+    });
+
+    if (res.ok) {
+      setFormData({ full_sn: "", place_name: "", who: userId });
+      refetch();
+      setShowModal(false);
+      setShowToast(true);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      setError(err.detail || "Błąd rozpoczęcia produkcji stencil.");
     }
   };
 
@@ -146,11 +206,43 @@ const ReceiveObjectView: React.FC = () => {
       setProductionForm({ card: "", line: "", paste: "" });
       refetch();
       setShowProductionModal(false);
+      setShowToast(true);
     } else {
       const err = await res.json().catch(() => ({}));
       setError(err.detail || "Błąd podczas uruchamiania nowej produkcji.");
+      setProductionForm({ card: "", line: "", paste: "" });
     }
   };
+
+  const handleRetoolingSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  const res = await fetch(`/api/process/retooling/${selectedProcess.id}/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      movement_type: "retooling",
+      who: userId,
+      place_name: productionForm.line,
+      production_card: productionForm.card,
+    }),
+  });
+
+  if (res.ok) {
+    setProductionForm({ card: "", line: "", paste: "" });
+    refetch();
+    setShowRetoolingModal(false);
+    setShowToast(true);
+  } else {
+    const err = await res.json().catch(() => ({}));
+    setError(err.error || err.detail || err.message || "Błąd podczas przezbrojenia.");
+    setProductionForm({ card: "", line: "", paste: "" });
+  }
+};
 
   const handleMotherClick = async (obj: any) => {
     if (expandedMotherId === obj.id) {
@@ -197,27 +289,61 @@ const ReceiveObjectView: React.FC = () => {
         >
           ← Powrót
         </button>
-        <button className="button-reset" onClick={() => setShowModal(true)}>
-          {isProductionProcess ? "➕ Kontynuuj produkcję" : "➕ Odbierz obiekt"}
-        </button>
-        {useListEndpoint && (
-  <button className="button-reset" onClick={() => setShowMultiModal(true)}>
-    ➕ Odbierz wiele
-  </button>
-)}
-        {isProductionProcess && (
-          <button
-            className="button-reset-green"
-            onClick={() => setShowProductionModal(true)}
-          >
-            🏁 Rozpocznij nową produkcje
-          </button>
-        )}
+          {isStencilProductionProcess && (
+            <button
+              className="button-reset-green"
+              onClick={() => setShowModal(true)}
+            >
+              🏁 Rozpocznij nową produkcję (Stencil)
+            </button>
+          )}
+
+          {!isStencilProductionProcess && (
+            <>
+              <button className="button-reset" onClick={() => setShowModal(true)}>
+                {isProductionProcess ? "➕ Kontynuuj produkcję" : "➕ Odbierz obiekt"}
+              </button>
+
+              {useListEndpoint && (
+                <button className="button-reset" onClick={() => setShowMultiModal(true)}>
+                  ➕ Pobierz z magazynku
+                </button>
+              )}
+
+              {isProductionProcess && (
+                <button
+                  className="button-reset-green"
+                  onClick={() => setShowProductionModal(true)}
+                >
+                  🏁 Rozpocznij nową produkcję
+                </button>
+              )}
+
+              {isProductionProcess && (
+                <button
+                  className="button-reset-orange"
+                  onClick={() => setShowRetoolingModal(true)}
+                >
+                  ⚙️ Przezbrojenie
+                </button>
+              )}
+            </>
+          )}
       </div>
 
       <p className="progress-label margin-plus">
         Liczba obiektów: {totalCount}
       </p>
+
+      <div style={{ marginBottom: "10px", display: "flex", gap: "10px", alignItems: "center" }}>
+        <input
+          type="text"
+          placeholder="Szukaj"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ccc", minWidth: "250px" }}
+        />
+      </div>
 
       <ProductObjectTable
         objects={objects}
@@ -226,6 +352,7 @@ const ReceiveObjectView: React.FC = () => {
         expandedMotherId={expandedMotherId}
         onSortChange={handleSortChange}
         ordering={ordering}
+        fields={fields}
       />
 
       <MultiSNModal
@@ -239,7 +366,15 @@ const ReceiveObjectView: React.FC = () => {
       {/* Continue / Receive Modal */}
       {showModal && (
         <Modal title={isProductionProcess ? "Kontynuuj produkcję" : "Dodaj produkt"} onClose={() => setShowModal(false)} hideFooter>
-          <form onSubmit={isProductionProcess ? handleContinueSubmit : handleReceiveSubmit}>
+          <form 
+            onSubmit={
+              isStencilProductionProcess
+                ? handleStencilSubmit
+                : isProductionProcess
+                  ? handleContinueSubmit
+                  : handleReceiveSubmit
+            }
+          >
             <label>
               Obiekt:
               <input
@@ -264,13 +399,16 @@ const ReceiveObjectView: React.FC = () => {
           </form>
         </Modal>
       )}
+      {showToast && (
+  <Toast message="✅ Operacja zakończona pomyślnie!" onClose={() => setShowToast(false)} />
+)}
 
       {/* New Production Modal */}
       {showProductionModal && (
         <Modal title="Nowa produkcja" onClose={() => setShowProductionModal(false)} hideFooter>
           <form onSubmit={handleStartNewProduction}>
             <label>
-              Karta produkcji:
+              Kod PCB (Karta Produktu):
               <input
                 ref={productionInputRef}
                 value={productionForm.card}
@@ -300,6 +438,33 @@ const ReceiveObjectView: React.FC = () => {
             <div className="modal-footer">
               <button className="button-reset" type="submit">Rozpocznij</button>
               <button className="btn-normal" type="button" onClick={() => setShowProductionModal(false)}>Anuluj</button>
+            </div>
+          </form>
+        </Modal>
+      )}
+      {showRetoolingModal && (
+        <Modal title="Przezbrojenie" onClose={() => setShowRetoolingModal(false)} hideFooter>
+          <form onSubmit={handleRetoolingSubmit}>
+            <label>
+              Kod PCB (Karta Produktu):
+              <input
+                value={productionForm.card}
+                onChange={(e) => setProductionForm({ ...productionForm, card: e.target.value })}
+                required
+              />
+            </label>
+
+            <label>
+              Linia:
+              <input
+                value={productionForm.line}
+                onChange={(e) => setProductionForm({ ...productionForm, line: e.target.value })}
+                required
+              />
+            </label>
+            <div className="modal-footer">
+              <button className="button-reset" type="submit">Zatwierdź</button>
+              <button className="btn-normal" type="button" onClick={() => setShowRetoolingModal(false)}>Anuluj</button>
             </div>
           </form>
         </Modal>

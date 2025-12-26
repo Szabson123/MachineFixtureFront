@@ -1,0 +1,191 @@
+/* StatusGroupsTable.css */
+
+.ag-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px;
+  min-height: 100vh;
+  background-color: #f4f7f6;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.ag-card {
+  width: 100%;
+  max-width: 900px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.ag-header {
+  padding: 25px 30px;
+  border-bottom: 1px solid #f0f0f0;
+  background-color: #ffffff;
+  
+  /* Flexbox do układu: Przycisk | Tytuł */
+  display: flex;
+  align-items: center;
+  gap: 15px; /* Odstęp między strzałką a tekstem */
+}
+
+/* NOWA KLASA DLA PRZYCISKU POWROTU */
+.ag-back-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+.ag-back-btn:hover {
+  background-color: #f1f5f9;
+  color: #1e293b;
+  transform: translateX(-2px); /* Lekki ruch w lewo przy najechaniu */
+}
+
+.ag-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.ag-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.ag-table-wrapper {
+  overflow-x: auto;
+}
+
+.ag-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center; /* Wyśrodkowanie całej tabeli */
+}
+
+.ag-th {
+  padding: 18px 24px;
+  background-color: #f8fafc;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #e2e8f0;
+  text-align: center;
+}
+
+.ag-tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.2s;
+}
+
+.ag-tr:hover {
+  background-color: #fcfcfc;
+}
+
+.ag-td {
+  padding: 16px 24px;
+  font-size: 0.95rem;
+  vertical-align: middle;
+  text-align: center;
+}
+
+/* Specjalna klasa dla nazwy (pogrubiona) */
+.ag-td-name {
+  font-weight: 600;
+  color: #333;
+}
+
+/* Specjalna klasa dla daty (mniejsza czcionka) */
+.ag-td-date {
+  color: #666;
+  font-size: 0.9em;
+}
+
+/* --- Badges --- */
+.ag-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  min-width: 80px;
+}
+
+.ag-badge-active {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.ag-badge-inactive {
+  background-color: #ffcece;
+  color: #8f0000;
+}
+
+.ag-toggle-container {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  border-radius: 13px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin: 0 auto;
+}
+
+.ag-toggle-on {
+  background-color: #10b981;
+}
+
+.ag-toggle-off {
+  background-color: #cbd5e1;
+}
+
+.ag-toggle-loading {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ag-toggle-circle {
+  position: absolute;
+  top: 3px;
+  width: 20px;
+  height: 20px;
+  background-color: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.ag-toggle-circle-on {
+  transform: translateX(25px);
+}
+
+.ag-toggle-circle-off {
+  transform: translateX(3px);
+}
+
+/* Obsługa braku danych */
+.ag-no-data {
+  color: #888;
+  padding: 30px;
+}
+
+.ag-tr-clickable {
+  cursor: pointer;
+}
+
+.ag-tr-clickable:hover {
+  background-color: #f1f5f9;
+}

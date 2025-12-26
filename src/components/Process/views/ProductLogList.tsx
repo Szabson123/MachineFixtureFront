@@ -1,6 +1,17 @@
 import React, { useState } from "react";
 import "./logs.css";
 
+// Aktualizacja typu zgodnie z nową odpowiedzią API
+type ProductLog = {
+  id: number;
+  entry_time: string;
+  who_entry: string | null;
+  full_sn: string;
+  process_name: string;
+  place_name: string;
+  movement_type: string;
+};
+
 const formatDate = (isoString: string): string => {
   const date = new Date(isoString);
   return date.toLocaleString("pl-PL", {
@@ -9,17 +20,23 @@ const formatDate = (isoString: string): string => {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
   });
 };
 
-type ProductLog = {
-  entry_time: string;
-  who_entry: string | null;
-  exit_time: string | null;
-  who_exit: string | null;
-  full_sn: string;
-  process_name: string;
-  place_name: string;
+const getLogStyle = (type: string) => {
+  switch (type) {
+    case "create":
+      return { className: "type-create", label: "Utworzenie" };
+    case "receive":
+      return { className: "type-receive", label: "Przyjęcie" };
+    case "move":
+      return { className: "type-move", label: "Wyciągniecie" };
+    case "trash":
+      return { className: "type-trash", label: "Utylizacja" };
+    default:
+      return { className: "type-other", label: type || "Inne" };
+  }
 };
 
 const ProductLogList: React.FC = () => {
@@ -33,10 +50,12 @@ const ProductLogList: React.FC = () => {
 
     setLoading(true);
     setError("");
-    setLogs([]); // Czyść logi przed nowym zapytaniem
+    setLogs([]);
 
     try {
-      const response = await fetch(`/api/process/product-object-process-logs/?sn=${sn}`);
+      const response = await fetch(
+        `/api/process/product-object-process-logs/?sn=${sn}`
+      );
       if (!response.ok) {
         throw new Error("Błąd pobierania logów");
       }
@@ -56,15 +75,16 @@ const ProductLogList: React.FC = () => {
   };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchLogs();
-    setSn(""); // Czyść input po wyszukiwaniu
-  };
+      e.preventDefault();
+      fetchLogs();
+      setSn("");
+    };
 
   return (
     <div className="t-container">
       <form onSubmit={handleSubmit} className="t-form">
         <input
+          autoFocus
           type="text"
           value={sn}
           onChange={(e) => setSn(e.target.value)}
@@ -76,30 +96,42 @@ const ProductLogList: React.FC = () => {
         </button>
       </form>
 
-      {loading && <p className="loading">Ładowanie...</p>}
+      {loading && <p className="loading">Ładowanie historii...</p>}
       {error && <p className="center-red">{error}</p>}
-      {!loading && !error && logs.length === 0 && (
-        <p className="loading">Brak wyników dla podanego numeru SN.</p>
+      
+      {!loading && !error && logs.length === 0 && sn && (
+        <p className="loading">Wpisz SN i kliknij Szukaj, aby zobaczyć historię.</p>
       )}
 
       <ul className="t-log-list">
-        {logs.map((log, idx) => (
-          <li key={idx} className="t-log-item">
-            <div className="t-log-entry">
-              <strong>Wejście:</strong> {formatDate(log.entry_time)}
-              {log.who_entry && ` (osoba: ${log.who_entry})`}
-            </div>
-            {log.exit_time && (
-              <div className="t-log-exit">
-                <strong>Wyjście:</strong> {formatDate(log.exit_time)}
-                {log.who_exit && ` (osoba: ${log.who_exit})`}
+        {logs.map((log) => {
+          const { className, label } = getLogStyle(log.movement_type);
+
+          return (
+            <li key={log.id} className={`t-log-item ${className}`}>
+              <div className="t-card-header">
+                <span className="t-timestamp">
+                   {formatDate(log.entry_time)}
+                </span>
+                <span className="t-badge">{label}</span>
               </div>
-            )}
-            <div className="t-log-title">{log.process_name}</div>
-            <div className="t-log-place">{log.place_name}</div>
-            <div className="t-log-sn">SN: {log.full_sn}</div>
-          </li>
-        ))}
+
+              <div className="t-card-body">
+                <div className="t-log-title">{log.process_name}</div>
+                <div className="t-log-place">
+                  Lokalizacja: <strong>{log.place_name}</strong>
+                </div>
+              </div>
+
+              <div className="t-card-footer">
+                <div className="t-user-info">
+                  Operator: <strong>{log.who_entry || "System/Nieznany"}</strong>
+                </div>
+                <div className="t-log-sn">SN: {log.full_sn}</div>
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

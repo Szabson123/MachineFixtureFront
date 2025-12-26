@@ -8,6 +8,7 @@ import './ProductProcesses.css';
 import { useParams } from 'react-router-dom';
 import { GreenSquareNode, OrangeSquareNode, RedSquareNode, BlueSquareNode } from '../ProcessNewGen/NodesComp';
 import { useNavigate } from 'react-router-dom';
+import HiddenEdge from './HiddenEdge';
 
 const nodeTypes = {
   normal: GreenSquareNode,
@@ -21,6 +22,10 @@ const typeMap: Record<string, string> = {
   condition: 'condition',
   end: 'end',
   add_receive: 'add_receive',
+};
+
+const edgeTypes = {
+  hidden: HiddenEdge
 };
 
 function transformGraphData(apiData: any) {
@@ -59,10 +64,12 @@ const FlowProcess: React.FC = () => {
   const navigate = useNavigate();
 
   const handleNodeClick = (_: any, node: Node) => {
-    const fullNode = node.data?.full;
-  
-    if (fullNode) {
-      localStorage.setItem('selectedProcess', JSON.stringify({
+  const fullNode = node.data?.full;
+
+  if (fullNode) {
+    localStorage.setItem(
+      "selectedProcess",
+      JSON.stringify({
         id: fullNode.id,
         name: fullNode.label,
         type: fullNode.type,
@@ -70,12 +77,15 @@ const FlowProcess: React.FC = () => {
           defaults: fullNode.defaults,
           starts: fullNode.starts,
           endings: fullNode.endings,
-        }
-      }));
-    }
-  
-    navigate(`/process/${productId}/process-action`);
-  };
+          fields: fullNode.fields || null,
+          autoCheck: fullNode.autoCheck ?? false,
+        },
+      })
+    );
+  }
+
+  navigate(`/process/${productId}/process-action`);
+};
 
   useEffect(() => {
     const fetchData = async () => {
@@ -116,10 +126,11 @@ const FlowProcess: React.FC = () => {
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
         panOnDrag
         selectionOnDrag
-        nodeTypes={nodeTypes}
         onNodeClick={handleNodeClick}
       >
       </ReactFlow>

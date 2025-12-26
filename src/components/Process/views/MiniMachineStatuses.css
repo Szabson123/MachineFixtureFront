@@ -1,16 +1,17 @@
 .mini-container {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 3 kolumny */
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
 }
 
 .mini-card {
   background: #fff;
   border: 1px solid #ddd;
-  border-radius: 12px;
-  padding: 0.5rem;
+  border-radius: 10px;
+  padding: 0.45rem;
   text-align: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  font-size: 0.9rem;
 }
 
 .mini-name {

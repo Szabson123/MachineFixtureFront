@@ -21,24 +21,6 @@ const ProcessAction: React.FC = () => {
     selectedProcess?.settings?.autoCheck === true || selectedProcess?.type === "condition";
 
   useEffect(() => {
-    if (!selectedProcess?.id) return;
-    const fetchPlaces = async () => {
-      try {
-        const response = await fetch(`/api/process/${selectedProcess.id}/place/`);
-        if (response.ok) {
-          const data = await response.json();
-          localStorage.setItem("availablePlaces", JSON.stringify(data));
-        } else {
-          console.error("Nie udało się pobrać miejsc.");
-        }
-      } catch (error) {
-        console.error("Błąd sieci przy pobieraniu miejsc:", error);
-      }
-    };
-    fetchPlaces();
-  }, [selectedProcess]);
-
-  useEffect(() => {
     if (showModal) {
       setUserId("");
       setFirstCharTime(null);
@@ -130,8 +112,8 @@ const handleConfirm = () => {
               <p>Przyjmij produkt do procesu</p>
             </div>
             <div className="action-button move-button" onClick={() => handleAction("move")}>
-              <h3>Wydaj</h3>
-              <p>Wydaj produkt z procesu</p>
+              <h3>Wyciągnij</h3>
+              <p>Wyciągnij produkt z procesu</p>
             </div>
           </div>
         );
@@ -143,7 +125,7 @@ const handleConfirm = () => {
               <p>Dodaj produkt do procesu</p>
             </div>
             <div className="action-button move-button" onClick={() => handleAction("move")}>
-              <h3>Wydaj</h3>
+              <h3>Wyciągnij</h3>
               <p>Przenieś produkt dalej</p>
             </div>
           </>
@@ -216,7 +198,10 @@ const handleConfirm = () => {
           />
         )}
 
-      {selectedProcess?.settings?.defaults?.production_process_type && (
+      {(
+        selectedProcess?.settings?.defaults?.production_process_type ||
+        selectedProcess?.settings?.defaults?.stencil_production_process_type
+      ) && (
         <div className="action-statuses">
           <MiniMachineStatuses />
         </div>

@@ -202,11 +202,15 @@ const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess })
     };
 
     try {
-      const response = await fetch("/api/golden-samples/mastersamples/create/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+        const response = await fetch("/api/golden-samples/mastersamples/create/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
+          },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        });
 
       if (!response.ok) {
         const errorText = await response.text();

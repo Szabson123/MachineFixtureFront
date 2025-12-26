@@ -23,6 +23,7 @@ const TrashObjectView: React.FC = () => {
     who: userId,
   });
 
+  const fields = selectedProcess?.settings?.fields ?? null;
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState("");
 
@@ -99,6 +100,7 @@ const TrashObjectView: React.FC = () => {
         expandedMotherId={null}
         onSortChange={handleSortChange}
         ordering={ordering}
+        fields={fields}
       />
       <div ref={loaderRef} style={{ height: "40px" }} />
 

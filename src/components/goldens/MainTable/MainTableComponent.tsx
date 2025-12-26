@@ -84,10 +84,13 @@ const MasterSamplesTable: React.FC = () => {
 
         const res = await fetch(url, { signal: ac.signal });
         if (!res.ok) throw new Error(await res.text());
-        const json: PaginatedResponse = await res.json();
-
-        setData((prev) => (append ? [...prev, ...json.results] : json.results));
-        setNextUrl(json.next);
+          const json: PaginatedResponse = await res.json();
+          setData((prev) => (append ? [...prev, ...json.results] : json.results));
+          setNextUrl(
+            json.next
+              ? new URL(json.next).pathname + new URL(json.next).search
+              : null
+          );
       } catch (err: any) {
         if (err?.name !== "AbortError") {
           console.error("Error fetching data:", err);
@@ -167,7 +170,7 @@ const MasterSamplesTable: React.FC = () => {
       .finally(() => setLoadingFilters(false));
   };
 
-  const handleAddNewItem = async () => {
+const handleAddNewItem = async () => {
   if (!contextField || !newItemName.trim()) return;
   setIsAdding(true);
 
@@ -180,39 +183,37 @@ const MasterSamplesTable: React.FC = () => {
   const endpoint = endpointMap[contextField];
   if (!endpoint) return;
 
-try {
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name: newItemName.trim() }),
-  });
-  if (!res.ok) throw new Error(await res.text());
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
+      },
+      credentials: "include",
+      body: JSON.stringify({ name: newItemName.trim() }),
+    });
+    if (!res.ok) throw new Error(await res.text());
 
-  setNewItemName("");
-  setIsAddModalOpen(false);
-
-  fetch(endpoint)
-      .then(async (res) => {
-        if (!res.ok) throw new Error(await res.text());
-        return res.json();
-      })
-      .then((json) => {
-        setFilterValues(json);
-        setFilterLabels((prev) => ({
-          ...prev,
-          [contextField!]: json.reduce(
-            (acc: { [id: number]: string }, item: { id: number; name: string }) => {
-              acc[item.id] = item.name;
-              return acc;
-            },
-            {}
-          ),
-        }));
-      })
-      .catch((err) => console.error("Błąd odświeżania listy:", err));
-
+    setNewItemName("");
+    setIsAddModalOpen(false);
     setContextMenu(null);
 
+    const refetchRes = await fetch(endpoint);
+    if (refetchRes.ok) {
+      const json = await refetchRes.json();
+      setFilterValues(json);
+      setFilterLabels((prev) => ({
+        ...prev,
+        [contextField!]: json.reduce(
+          (acc: { [id: number]: string }, item: { id: number; name: string }) => {
+            acc[item.id] = item.name;
+            return acc;
+          },
+          {}
+        ),
+      }));
+    }
   } catch (err) {
     console.error("Błąd przy dodawaniu nowego elementu:", err);
   } finally {
