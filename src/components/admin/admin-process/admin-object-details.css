@@ -1,0 +1,168 @@
+/* =========================
+   CONTAINER
+========================= */
+.aod-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px 120px;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: #0f172a;
+}
+
+.aod-container h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: #1e293b;
+}
+
+/* =========================
+   FORM CARD
+========================= */
+.aod-form {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  padding: 24px 28px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px 32px;
+}
+
+/* =========================
+   ROWS
+========================= */
+.aod-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.aod-row label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* =========================
+   INPUTS
+========================= */
+.aod-row input[type="text"],
+.aod-row input[type="number"],
+.aod-row input[type="date"] {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.aod-row input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+}
+
+/* =========================
+   READONLY FIELD
+========================= */
+.aod-readonly {
+  background: #f8fafc;
+  border: 1px dashed #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  color: #334155;
+  font-family: monospace;
+}
+
+/* =========================
+   CHECKBOX
+========================= */
+.aod-checkbox {
+  grid-column: span 2;
+}
+
+.aod-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+}
+
+.aod-checkbox input {
+  width: 18px;
+  height: 18px;
+}
+
+/* =========================
+   ACTIONS (STICKY FOOTER)
+========================= */
+.aod-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(248,250,252,0.95);
+  backdrop-filter: blur(6px);
+  border-top: 1px solid #e2e8f0;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  z-index: 20;
+}
+
+.aod-actions button {
+  min-width: 140px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.1s;
+}
+
+/* CANCEL */
+.aod-actions button:first-child {
+  background: white;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+.aod-actions button:first-child:hover {
+  background: #f1f5f9;
+}
+
+/* SAVE */
+.aod-actions button:last-child {
+  background: #2563eb;
+  border: none;
+  color: white;
+  box-shadow: 0 6px 14px rgba(37,99,235,0.25);
+}
+
+.aod-actions button:last-child:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.aod-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (max-width: 900px) {
+  .aod-form {
+    grid-template-columns: 1fr;
+  }
+
+  .aod-checkbox {
+    grid-column: span 1;
+  }
+}

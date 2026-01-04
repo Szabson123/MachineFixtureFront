@@ -156,3 +156,21 @@
   font-size: 1.1rem;
   margin-top: 40px;
 }
+
+.gp-card-disabled {
+  background: #eef6ff;
+  border: 1px solid #cfe3ff;
+}
+
+.gp-status-disabled {
+  color: #7aa2d6;
+  font-style: italic;
+}
+
+.gp-no-toggle {
+  font-size: 12px;
+  color: #6b8db3;
+  padding: 6px 10px;
+  background: #dbeafe;
+  border-radius: 12px;
+}

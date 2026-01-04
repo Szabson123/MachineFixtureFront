@@ -1,0 +1,93 @@
+.aol-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: #333;
+}
+
+.aol-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.aol-title {
+  font-size: 1.8rem;
+  margin: 0;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* --- GRID --- */
+.aol-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+@media (max-width: 992px) {
+  .aol-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .aol-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- CARD --- */
+.aol-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  padding: 28px 24px;
+  border: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  text-align: center;
+}
+
+.aol-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.aol-card-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* --- EMPTY --- */
+.aol-empty {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 1.1rem;
+  margin-top: 40px;
+}
+
+.aol-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.aol-back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease;
+}
+
+.aol-back-btn:hover {
+  color: #1e293b;
+}
