@@ -10,8 +10,8 @@ function EditableLabel({ data, nodeId }: { data: any; nodeId: string }) {
   const handleDoubleClick = () => setEditing(true);
   const handleBlur = () => {
     setEditing(false);
-    data.label = label; // aktualizacja bezpośrednio
-    updateNodeInternals(nodeId); // wymuś render
+    data.label = label;
+    updateNodeInternals(nodeId);
   };
 
   return editing ? (
@@ -29,7 +29,6 @@ function EditableLabel({ data, nodeId }: { data: any; nodeId: string }) {
   );
 }
 
-// Zielony kwadrat
 export function GreenSquareNode({ data, id }: NodeProps) {
   return (
     <div className="node green">
@@ -43,7 +42,6 @@ export function GreenSquareNode({ data, id }: NodeProps) {
   );
 }
 
-// Czerwony kwadrat
 export function RedSquareNode({ data, id }: NodeProps) {
   return (
     <div className="node red">

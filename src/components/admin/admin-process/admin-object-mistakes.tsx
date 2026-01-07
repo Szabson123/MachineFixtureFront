@@ -12,7 +12,6 @@ interface LogItem {
   proc_label: string;
   pl_name: string;
   product_object_name: string | null;
-  object_id: number | null;
 }
 
 interface ApiResponse {
@@ -22,8 +21,8 @@ interface ApiResponse {
   results: LogItem[];
 }
 
-const AdminPlaceDetailsPage: React.FC = () => {
-  const { placeId } = useParams<{ placeId: string }>();
+const AdminProductObjectDetailsPage: React.FC = () => {
+  const { objectId } = useParams<{ objectId: string }>();
   const navigate = useNavigate();
 
   const [logs, setLogs] = useState<LogItem[]>([]);
@@ -60,12 +59,12 @@ const AdminPlaceDetailsPage: React.FC = () => {
   }, [loading]);
 
   useEffect(() => {
-    if (placeId) {
+    if (objectId) {
       setLogs([]);
       setNextPageUrl(null);
-      fetchLogs(`/api/process/place/${placeId}/admin-logs/`, true);
+      fetchLogs(`/api/process/product/${objectId}/admin-logs/`, true);
     }
-  }, [placeId]);
+  }, [objectId]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -83,15 +82,6 @@ const AdminPlaceDetailsPage: React.FC = () => {
     };
   }, [nextPageUrl, loading, fetchLogs]);
 
-  const handleGoToObject = (
-    objectId: number,
-    e: React.MouseEvent
-  ) => {
-    e.stopPropagation();
-
-    navigate(`/admin/products/objects/${objectId}`);
-  };
-
   const formatDate = (isoString: string) => {
     const d = new Date(isoString);
     return (
@@ -103,7 +93,7 @@ const AdminPlaceDetailsPage: React.FC = () => {
     );
   };
 
-  if (!placeId) return <div className="d-container">Błąd: Brak ID miejsca</div>;
+  if (!objectId) return <div className="d-container">Błąd: Brak ID Produktu</div>;
 
   return (
     <div className="d-container">
@@ -117,10 +107,10 @@ const AdminPlaceDetailsPage: React.FC = () => {
       </button>
 
       <header className="d-header">
-        <h1>Historia Miejsca</h1>
+        <h1>Historia Produktu</h1>
         <div className="d-meta">
           <div className="d-meta-item">
-            ID Miejsca: <span className="d-mono">{placeId}</span>
+            ID Miejsca: <span className="d-mono">{objectId}</span>
           </div>
           <div className="d-meta-item">
             Wpisów: <strong>{totalCount}</strong>
@@ -135,7 +125,6 @@ const AdminPlaceDetailsPage: React.FC = () => {
               <tr>
                 <th style={{ width: '80px' }}>ID</th>
                 <th style={{ width: '150px' }}>Data</th>
-                <th>Obiekt</th> {/* <--- NOWY NAGŁÓWEK */}
                 <th>Proces / Label</th>
                 <th>Operator</th>
                 <th>Ruch</th>
@@ -147,26 +136,6 @@ const AdminPlaceDetailsPage: React.FC = () => {
                 <tr key={log.id}>
                   <td><span className="d-mono">#{log.id}</span></td>
                   <td>{formatDate(log.date)}</td>
-                  <td>
-                    {log.product_object_name ? (
-                      <span
-                        onClick={(e) => handleGoToObject(log.object_id!, e)}
-                        title="Kliknij, aby przejść do obiektu"
-                        className="d-copy-link"
-                        style={{
-                          cursor: 'pointer',
-                          fontWeight: 500,
-                          color: '#2B6CB0',
-                        }}
-                      >
-                        {log.product_object_name.length > 10
-                          ? `${log.product_object_name.substring(0, 10)}...`
-                          : log.product_object_name}
-                      </span>
-                    ) : (
-                      <span style={{ color: '#CBD5E0' }}>-</span>
-                    )}
-                  </td>
                   <td style={{ fontWeight: 500 }}>{log.proc_label}</td> 
                   <td>{log.who_value}</td>
                   <td style={{ textTransform: 'capitalize' }}>{log.movement}</td>
@@ -216,4 +185,4 @@ const AdminPlaceDetailsPage: React.FC = () => {
   );
 };
 
-export default AdminPlaceDetailsPage;
+export default AdminProductObjectDetailsPage;

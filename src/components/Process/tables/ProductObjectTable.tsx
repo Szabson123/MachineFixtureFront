@@ -24,8 +24,6 @@ interface FieldsConfig {
   last_move: boolean;
   sito_basic_unnamed_place: boolean;
   free_plain_text: boolean;
-  
-  // product_process?: string; // nie jest kolumną tylko referencją ID
 }
 
 interface ProductObjectTableProps {
@@ -35,7 +33,7 @@ interface ProductObjectTableProps {
   expandedMotherId: number | null;
   onSortChange: (field: string) => void;
   ordering: string;
-  fields?: FieldsConfig | null;   // <── NOWE
+  fields?: FieldsConfig | null;
 }
 export const ProductObjectTable: React.FC<ProductObjectTableProps> = ({
   objects,
@@ -78,8 +76,6 @@ const renderSortArrow = (field: string) => {
   if (!ordering.includes(field)) return null;
   return ordering.startsWith("-") ? "↓" : "↑";
 };
-
-// --- DEFINICJA KOLUMN ---
 
 type ColumnKey =
   | "type"
@@ -207,7 +203,6 @@ const allColumns: ColumnDef[] = [
   },
 ];
 
-// jeśli NIE masz fields (stare procesy) – pokazuj wszystkie
 const visibleColumns = allColumns.filter((col) => {
   if (!col.fieldFlag) return true;
   if (!fields) return true;

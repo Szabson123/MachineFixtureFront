@@ -10,7 +10,6 @@ export function useProductObjects(initialUrl: string, ordering: string) {
     try {
       const parsed = new URL(url, window.location.origin);
 
-      // dopinamy ordering
       if (ordering) {
         parsed.searchParams.set("ordering", ordering);
       }
@@ -36,7 +35,6 @@ export function useProductObjects(initialUrl: string, ordering: string) {
   };
 
   useEffect(() => {
-    // kiedy zmieni się ordering -> od nowa
     fetchObjects(initialUrl);
   }, [initialUrl, ordering]);
 

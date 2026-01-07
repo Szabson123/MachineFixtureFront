@@ -267,7 +267,7 @@ export default function FlowEditor() {
         panOnDrag={[2]}
         selectionOnDrag={true}
         snapToGrid={true}
-        snapGrid={[1, 1]} // <=== tu ustawiamy krok siatki na 1 piksel
+        snapGrid={[1, 1]}
       >
           <MiniMap />
           <Controls />

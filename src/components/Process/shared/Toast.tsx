@@ -1,4 +1,3 @@
-// src/components/shared/Toast.tsx
 import React, { useEffect } from "react";
 import "./Toast.css";
 

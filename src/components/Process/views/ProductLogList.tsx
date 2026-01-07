@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import "./logs.css";
 
-// Aktualizacja typu zgodnie z nową odpowiedzią API
 type ProductLog = {
   id: number;
   entry_time: string;

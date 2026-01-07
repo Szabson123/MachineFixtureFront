@@ -16,7 +16,6 @@ const MultiSNModal: React.FC<MultiSNModalProps> = ({ isOpen, onClose, onSubmit }
   const placeInputRef = useRef<HTMLInputElement>(null);
   const multiSNRefs = useRef<HTMLInputElement[]>([]);
 
-  // autofocus
   useEffect(() => {
     if (isOpen && placeInputRef.current) {
       setTimeout(() => placeInputRef.current?.focus(), 100);

@@ -58,7 +58,7 @@ const AdminMainPage: React.FC = () => {
     {
       id: 'products',
       title: 'Produkty',
-      description: 'Wszystkie objekty/produkty w aplikacji',
+      description: 'Wszystkie obiekty/produkty w aplikacji',
       themeClass: 'teal',
       IconComponent: Icons.Products,
       path: '/admin/products',

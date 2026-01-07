@@ -51,7 +51,6 @@ const MasterSamplesTable: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Infinite scroll
   const [nextUrl, setNextUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);

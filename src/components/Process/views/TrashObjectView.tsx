@@ -1,4 +1,3 @@
-// src/views/TrashObjectView.tsx
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useProductObjects } from "../hooks/useProductObjects";

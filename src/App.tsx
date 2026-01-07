@@ -26,6 +26,7 @@ import GroupPlacesGrid from './components/admin/admin-process/admin-group-place'
 import AdminProductList from './components/admin/admin-process/admin-products-list';
 import AdminObjectsList from './components/admin/admin-process/admin-object-list';
 import AdminObjectDetails from './components/admin/admin-process/admin-object-details';
+import AdminProductObjectDetailsPage from './components/admin/admin-process/admin-object-mistakes';
 
 function App() {
   return (
@@ -51,13 +52,14 @@ function App() {
 
         <Route path="/admin/main-page" element={<AdminMainPage />} />
         <Route path="/admin/process-list" element={<AdminProcessesPage />} />
+        <Route path='/admin/product-object/:objectId' element={<AdminProductObjectDetailsPage />} />
         <Route path="/admin/mistake-list/:processId" element={<AdminProcessDetailsPage />} />
         <Route path="/admin/place-list/:placeId" element={<AdminPlaceDetailsPage />} />
         <Route path="/admin/groups" element={<AdminGroupsPage />} />
         <Route path="/admin/groups/:groupId/places" element={<GroupPlacesGrid />} />
         <Route path="/admin/products" element={<AdminProductList />} />
         <Route path="/admin/products/:productId" element={<AdminObjectsList />} />
-        <Route path="/admin/products/:productId/objects/:objectId"element={<AdminObjectDetails />}/>
+        <Route path="/admin/products/objects/:objectId"element={<AdminObjectDetails />}/>
       </Routes>
     </Router>
   );

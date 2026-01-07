@@ -47,8 +47,23 @@ const AdminProcessesPage: React.FC = () => {
       
       <div className="p-header-row">
         <header className="p-header-content">
-          <h1>Lista Procesów</h1>
-          <p>Zarządzaj procesami produkcyjnymi</p>
+          {/* Przycisk zostaje tutaj */}
+          <button 
+            className="ag-back-btn" 
+            onClick={() => navigate("/admin/main-page")}
+            title="Wróć do panelu głównego"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+
+          {/* NOWY DIV GRUPUJĄCY TEKST */}
+          <div>
+            <h1>Lista Procesów</h1>
+            <p>Zarządzaj procesami produkcyjnymi</p>
+          </div>
         </header>
 
         <div className="p-search-wrapper">

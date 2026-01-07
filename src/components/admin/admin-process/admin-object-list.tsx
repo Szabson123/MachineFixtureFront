@@ -26,6 +26,9 @@ const AdminObjectsList = () => {
   const [count, setCount] = useState(0);
   const isFetchingRef = useRef(false);
 
+  const [search, setSearch] = useState("");
+  const searchTimeoutRef = useRef<number | null>(null);
+
 
   const observerTarget = useRef<HTMLDivElement>(null);
 
@@ -62,14 +65,39 @@ const AdminObjectsList = () => {
   []
 );
 
+const handleSearchChange = (value: string) => {
+  setSearch(value);
+
+  if (searchTimeoutRef.current) {
+    window.clearTimeout(searchTimeoutRef.current);
+  }
+
+  searchTimeoutRef.current = window.setTimeout(() => {
+    setData([]);
+    setNextPageUrl(null);
+
+    fetchData(
+      `/api/process/${productId}/admin-objects/?search=${encodeURIComponent(
+        value
+      )}`,
+      true
+    );
+  }, 400);
+};
+
 useEffect(() => {
   if (!productId) return;
 
   setData([]);
   setNextPageUrl(null);
 
-  fetchData(`/api/process/${productId}/admin-objects/`, true);
-}, [productId, fetchData]);
+  fetchData(
+    `/api/process/${productId}/admin-objects/?search=${encodeURIComponent(
+      search
+    )}`,
+    true
+  );
+}, [productId]);
 
 useEffect(() => {
   if (!nextPageUrl) return;
@@ -107,7 +135,7 @@ useEffect(() => {
 
   return (
     <div className="aol-container">
-      <div className="aol-header">
+      <div className="aol-header aol-header-with-search">
         <button
           className="aol-back-btn"
           onClick={() => navigate("/admin/products")}
@@ -132,6 +160,13 @@ useEffect(() => {
         <h2 className="aol-title">
           Obiekty ({count})
         </h2>
+        <input
+          type="text"
+          className="aol-search"
+          placeholder="Szukaj po SN lub produkcie..."
+          value={search}
+          onChange={(e) => handleSearchChange(e.target.value)}
+        />
       </div>
 
       <div className="aol-table-wrapper">
@@ -149,7 +184,7 @@ useEffect(() => {
                   key={item.id}
                   className="aol-tr"
                   onClick={() =>
-                    navigate(`/admin/products/${productId}/objects/${item.id}`)
+                    navigate(`/admin/products/objects/${item.id}`)
                   }
                 >
                 <td className="aol-td aol-td-sn">{item.full_sn}</td>

@@ -231,3 +231,22 @@
     background-color: #4299E1;
   }
 }
+
+.ag-back-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+.p-header-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}

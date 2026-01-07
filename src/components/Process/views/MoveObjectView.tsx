@@ -123,7 +123,6 @@ const MoveObjectView: React.FC = () => {
       });
 
       const data = await res.json().catch(() => ({}));
-      // spodziewamy się teraz: { detail: "...", id: number, is_mother: boolean }
 
       if (res.ok) {
         setFormData({ full_sn: "", who: userId, place_name: "" });
@@ -137,14 +136,11 @@ const MoveObjectView: React.FC = () => {
             );
             if (childrenRes.ok) {
               const kids = await childrenRes.json();
-              // podtrzymujemy cache dzieci dla UX
               setChildrenMap((prev) => ({ ...prev, [data.id]: kids }));
 
-              // pusto? pokaż modal dodawania dzieci
               if (Array.isArray(kids) && kids.length === 0) {
                 openAddChildModal({
                   full_sn: data?.full_sn || formData.full_sn,
-                  // jeśli backend nie zwraca short sn / place w tej odpowiedzi, użyjemy fallbacków:
                   serial_number: data?.serial_number,
                   place_name: data?.place_name,
                   current_place: data?.current_place,
@@ -152,7 +148,6 @@ const MoveObjectView: React.FC = () => {
               }
             }
           } catch {
-            // jeżeli sprawdzenie dzieci się nie uda – nie wymuszamy modala
           }
         }
 
@@ -182,8 +177,6 @@ const MoveObjectView: React.FC = () => {
     }
 
     setExpandedMotherId(obj.id);
-
-    // zawsze dociągamy dzieci z endpointu children/
     try {
       const res = await fetch(
         `/api/process/${productId}/${selectedProcess.id}/product-objects/${obj.id}/children/`
@@ -194,8 +187,6 @@ const MoveObjectView: React.FC = () => {
     } catch {
       setError("Błąd pobierania dzieci.");
     }
-
-    // dodatkowo: jeśli oczekujemy dzieci, klik w matkę otwiera modal
     if (expectingChild && obj?.full_sn) {
       openAddChildModal({
         full_sn: obj.full_sn,

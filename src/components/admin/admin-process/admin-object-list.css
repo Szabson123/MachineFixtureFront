@@ -19,6 +19,26 @@
   margin: 0;
 }
 
+.aol-header-with-search {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.aol-search {
+  margin-left: auto;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  min-width: 240px;
+}
+
+.aol-search:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
 .aol-back-btn {
   background: none;
   border: none;

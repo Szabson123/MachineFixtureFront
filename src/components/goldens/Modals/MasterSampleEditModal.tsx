@@ -7,19 +7,16 @@ interface EditModalProps {
   id: number | null;
   isOpen: boolean;
   onClose: () => void;
-  // dostaje odpowiedź z PATCH (format listy) i ma zaktualizować wiersz
   onSuccess: (updatedRow: any) => void;
 }
 
 const toNumberOrEmpty = (v: string) => (v === "" ? "" : Number(v));
 
-// helper: z GET (różne możliwe formaty) wyciąga tablicę stringów
 const normalizeCodes = (value: any): string[] => {
   if (!value) return [];
   if (Array.isArray(value)) {
     if (value.length === 0) return [];
     if (typeof value[0] === "string") return value as string[];
-    // czasem może przyjść [{id, code}] – mapujemy do code
     if (typeof value[0] === "object" && value[0]?.code) {
       return (value as any[]).map((x) => String(x.code));
     }
@@ -27,7 +24,6 @@ const normalizeCodes = (value: any): string[] => {
   return [];
 };
 
-// helper: FKs z GET: może przyjść number lub {id, name}
 const normalizeId = (value: any): number | "" => {
   if (value === null || value === undefined) return "";
   if (typeof value === "number") return value;
@@ -46,12 +42,11 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
   const [departaments, setDepartaments] = useState<Option[]>([]);
   const [types, setTypes] = useState<Option[]>([]);
 
-  // formularz
   const [client, setClient] = useState<number | "">("");
   const [processName, setProcessName] = useState<number | "">("");
   const [departament, setDepartament] = useState<number | "">("");
   const [masterType, setMasterType] = useState<number | "">("");
-  const [createdBy, setCreatedBy] = useState<number | "">(""); // jeśli backend wymaga
+  const [createdBy, setCreatedBy] = useState<number | "">("");
 
   const [projectName, setProjectName] = useState("");
   const [sn, setSn] = useState("");
@@ -67,7 +62,6 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Ładowanie słowników i danych rekordu
   useEffect(() => {
     if (!isOpen || !id) return;
 
@@ -108,12 +102,11 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
 
-        // znormalizuj wartości z GET
         setClient(normalizeId(data.client));
         setProcessName(normalizeId(data.process_name));
         setDepartament(normalizeId(data.departament));
         setMasterType(normalizeId(data.master_type));
-        setCreatedBy(normalizeId(data.created_by)); // jeżeli będzie zwracane
+        setCreatedBy(normalizeId(data.created_by));
 
         setProjectName(data.project_name ?? "");
         setSn(data.sn ?? "");
@@ -145,12 +138,11 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
     setError(null);
 
     const payload: any = {
-      // PATCH — wyślij po prostu bieżące wartości (możesz też różnicować zmienione pola)
       client,
       process_name: processName,
       departament,
       master_type: masterType,
-      created_by: createdBy || null, // jeśli chcesz przepchnąć null
+      created_by: createdBy || null,
       project_name: projectName.trim(),
       sn: sn.trim(),
       expire_date: expireDate,
@@ -167,7 +159,7 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(await res.text());
-      const updatedListItem = await res.json(); // <- backend zwraca serializer listy
+      const updatedListItem = await res.json();
       onSuccess(updatedListItem);
       onClose();
     } catch (e: any) {

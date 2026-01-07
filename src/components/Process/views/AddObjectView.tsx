@@ -19,7 +19,6 @@ const AddObjectView: React.FC = () => {
   const endpoint = `/api/process/${productId}/${selectedProcess.id}/product-objects/?place_isnull=false`;
   const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint, ordering);
   const fields = selectedProcess?.settings?.fields ?? null;
-  // baza ścieżki do API (dla czytelności)
   const basePath = `/api/process/${productId}/${selectedProcess.id}`;
 
   const [formData, setFormData] = useState({
@@ -35,17 +34,15 @@ const AddObjectView: React.FC = () => {
   const [multiSNs, setMultiSNs] = useState<string[]>([""]);
   const [multiErrors, setMultiErrors] = useState<number[]>([]);
 
-  // NEW: modal do dodawania wielu do wskazanej matki
   const [showMultiToMotherModal, setShowMultiToMotherModal] = useState(false);
-  const [selectedMotherSN, setSelectedMotherSN] = useState<string>(""); // pełny SN do API
-  const [selectedMotherLabel, setSelectedMotherLabel] = useState<string>(""); // krótki SN do UI
-  const [selectedMotherPlace, setSelectedMotherPlace] = useState<string>(""); // display only
+  const [selectedMotherSN, setSelectedMotherSN] = useState<string>("");
+  const [selectedMotherLabel, setSelectedMotherLabel] = useState<string>("");
+  const [selectedMotherPlace, setSelectedMotherPlace] = useState<string>("");
 
   const inputRef = useRef<HTMLInputElement>(null);
   const multiSNRefs = useRef<HTMLInputElement[]>([]);
   const placeInputRef = useRef<HTMLInputElement>(null);
 
-  // helper na krótki SN
   const getShortSN = (obj: any) =>
     obj?.serial_number ?? obj?.short_sn ?? obj?.sn_short ?? (obj?.full_sn ? obj.full_sn.slice(-6) : "");
 
@@ -101,7 +98,6 @@ const AddObjectView: React.FC = () => {
   };
 
   const handleMotherClick = async (obj: any) => {
-    // kliknięcie w tę samą matkę – tylko zwijamy/rozwijamy dzieci, nie otwieramy modala
     if (expandedMotherId === obj.id) {
       setExpandedMotherId(null);
       return;
@@ -116,7 +112,6 @@ const AddObjectView: React.FC = () => {
       setError("Błąd pobierania dzieci.");
     }
 
-    // otwieramy modal dodawania dzieci do tej matki
     if (obj?.full_sn) {
       setSelectedMotherSN(obj.full_sn);
       setSelectedMotherLabel(getShortSN(obj));
@@ -185,7 +180,6 @@ const AddObjectView: React.FC = () => {
           <button
             className="button-reset"
             onClick={() => {
-              // ten modal nie używa matki — czyścimy ją na wszelki wypadek
               setSelectedMotherSN("");
               setSelectedMotherLabel("");
               setSelectedMotherPlace("");
@@ -207,13 +201,12 @@ const AddObjectView: React.FC = () => {
         ordering={ordering}
         fields={fields}
         onSortChange={(field) => {
-          // kliknięcie w nagłówek
           if (ordering === field) {
-            setOrdering("-" + field); // rosnąco -> malejąco
+            setOrdering("-" + field);
           } else if (ordering === "-" + field) {
-            setOrdering(field); // malejąco -> rosnąco
+            setOrdering(field);
           } else {
-            setOrdering(field); // nowe pole -> rosnąco
+            setOrdering(field);
           }
         }}
       />
@@ -267,7 +260,7 @@ const AddObjectView: React.FC = () => {
               const filtered = multiSNs.filter(sn => sn.trim() !== "");
               const unique = [...new Set(filtered)];
 
-              if (filtered.length !== unique.length) return; // duplikaty – nic nie rób
+              if (filtered.length !== unique.length) return;
               if (!formData.place_name?.trim()) {
                 setError("Podaj miejsce.");
                 return;
@@ -282,13 +275,13 @@ const AddObjectView: React.FC = () => {
                 credentials: "include",
                 body: JSON.stringify({
                   who_entry: formData.who_entry,
-                  place_name: formData.place_name, // wysyłamy miejsce
+                  place_name: formData.place_name,
                   objects: unique.map((sn) => ({ full_sn: sn }))
                 }),
               });
 
               if (res.ok) {
-                setShowMultiModal(false);     // <- zamykamy właściwy modal
+                setShowMultiModal(false);
                 setMultiSNs([""]);
                 setMultiErrors([]);
                 setShowToast(true);
@@ -377,7 +370,7 @@ const AddObjectView: React.FC = () => {
               const filtered = multiSNs.filter(sn => sn.trim() !== "");
               const unique = [...new Set(filtered)];
 
-              if (filtered.length !== unique.length) return; // duplikaty – nic nie rób
+              if (filtered.length !== unique.length) return;
               if (!selectedMotherSN) {
                 setError("Brak wybranej matki (SN). Spróbuj ponownie.");
                 return;
@@ -391,7 +384,6 @@ const AddObjectView: React.FC = () => {
                 },
                 credentials: "include",
                 body: JSON.stringify({
-                  // place: pomijamy – backend powinien wziąć z matki
                   who_entry: formData.who_entry,
                   mother_sn: selectedMotherSN,
                   objects: unique.map((sn) => ({ full_sn: sn }))

@@ -11,7 +11,8 @@ interface LogItem {
   info: string | null;
   proc_label: string;
   pl_name: string;
-  product_object_name: string | null; // <--- NOWE POLE
+  product_object_name: string | null;
+  object_id: number | null;
 }
 
 interface PlaceItem {
@@ -108,9 +109,13 @@ const AdminProcessDetailsPage: React.FC = () => {
     };
   }, [nextPageUrl, loading, fetchLogs]);
 
-    const handleCopy = (text: string, e: React.MouseEvent) => {
+    const handleGoToObject = (
+      objectId: number,
+      e: React.MouseEvent
+    ) => {
       e.stopPropagation();
-      navigator.clipboard.writeText(text);
+
+      navigate(`/admin/products/objects/${objectId}`);
     };
 
   const formatDate = (isoString: string) => {
@@ -167,13 +172,12 @@ const AdminProcessDetailsPage: React.FC = () => {
                     <tr key={log.id}>
                       <td><span className="d-mono">#{log.id}</span></td>
                       <td>{formatDate(log.date)}</td>
-                      
                      <td>
                         {log.product_object_name ? (
                             <span 
-                            onClick={(e) => handleCopy(log.product_object_name!, e)}
-                            title={`${log.product_object_name} (Kliknij, aby skopiować)`}
-                            className="d-copy-link" // Możesz dodać klasę lub style inline poniżej
+                            onClick={(e) => handleGoToObject(log.object_id!, e)}
+                            title={`${log.product_object_name} (Kliknij, aby przekierować)`}
+                            className="d-copy-link"
                             style={{ 
                                 cursor: 'copy',
                                 fontWeight: 500,
