@@ -19,7 +19,7 @@ const Navbar: React.FC = () => {
           <li><Link to="/traceability" className="logo-text-small">Traceability</Link></li>
           <li><Link to="/machine-statuses" className="logo-text-small">Monitor Pracy Maszyn</Link></li>
           <li><Link to="/process" className="logo-text-small">Planowanie produkcji</Link></li>
-          <li><Link to="/process" className="logo-text-small">Statystyki</Link></li>
+          <li><Link to="/admin/main-page" className="logo-text-small">Administrator</Link></li>
           <li><Link to="/new-flow" className="logo-text-small">Nowy Produkt</Link></li>
         </ul>
       </div>

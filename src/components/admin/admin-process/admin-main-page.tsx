@@ -1,7 +1,8 @@
 import React from 'react';
 import './admin-main-page.css';
 import { useNavigate } from 'react-router-dom';
-
+import { useEffect, useState } from "react";
+import { getCSRFToken } from '../../../utils';
 const Icons = {
   Processes: () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -65,12 +66,64 @@ const AdminMainPage: React.FC = () => {
     },
   ];
 
+  const [isAuth, setIsAuth] = useState<boolean | null>(null);
+
+  useEffect(() => {
+  const checkAuth = async () => {
+    try {
+      const res = await fetch("/api/user/auth/me/", {
+        credentials: "include",
+      });
+      setIsAuth(res.ok);
+    } catch {
+      setIsAuth(false);
+    }
+  };
+
+  checkAuth();
+}, []);
+
 
   return (
     <div className="a-container">
       <header className="a-header">
-        <h1>Panel Administratora</h1>
-        <p>Wybierz moduł, aby rozpocząć pracę</p>
+        <div className="a-header-top">
+          <div>
+            <h1>Panel Administratora</h1>
+            <p className='a-margin'>Wybierz moduł, aby rozpocząć pracę</p>
+          </div>
+
+          {isAuth === false && (
+            <button
+              className="a-auth-btn"
+              onClick={() => navigate("/login")}
+            >
+              Zaloguj
+            </button>
+          )}
+
+          {isAuth === true && (
+          <button
+            className="a-auth-btn"
+            onClick={async () => {
+              try {
+                await fetch("/api/user/auth/logout/", {
+                  method: "POST",
+                  credentials: "include",
+                  headers: {
+                    "X-CSRFToken": getCSRFToken() ?? "",
+                  },
+                });
+              } finally {
+                setIsAuth(false);
+                navigate("/admin/main-page", { replace: true });
+              }
+            }}
+          >
+            Wyloguj
+          </button>
+        )}
+        </div>
       </header>
       
       <div className="a-grid">

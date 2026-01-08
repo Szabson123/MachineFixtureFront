@@ -130,7 +130,7 @@ const allColumns: ColumnDef[] = [
   },
     {
     key: "free_plain_text",
-    label: "Produkt",
+    label: "Nazwa Programu",
     fieldFlag: "free_plain_text",
     sortableField: "free_plain_text",
     render: (obj) => obj.free_plain_text || "-",

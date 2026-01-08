@@ -6,6 +6,7 @@ import Toast from "../shared/Toast";
 import Modal from "../shared/Modal";
 import ErrorModal from "../shared/ErrorModal";
 import "./views.css";
+import WiderCreateModal from "../modals/AddWiderObject";
 
 const AddObjectView: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -43,6 +44,9 @@ const AddObjectView: React.FC = () => {
   const multiSNRefs = useRef<HTMLInputElement[]>([]);
   const placeInputRef = useRef<HTMLInputElement>(null);
 
+  const useWiderCreate = Boolean(selectedProcess?.settings?.starts?.use_wider_create);
+  const [showWiderModal, setShowWiderModal] = useState(false);
+
   const getShortSN = (obj: any) =>
     obj?.serial_number ?? obj?.short_sn ?? obj?.sn_short ?? (obj?.full_sn ? obj.full_sn.slice(-6) : "");
 
@@ -76,6 +80,23 @@ const AddObjectView: React.FC = () => {
       }
     }
     return "Wystąpił nieznany błąd.";
+  };
+
+  const createProductObject = async (payload: any) => {
+    const res = await fetch(`${basePath}/product-objects/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
+      },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw err;
+    }
   };
 
   const handleMultiSNChange = (index: number, value: string) => {
@@ -135,23 +156,14 @@ const AddObjectView: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch(`${basePath}/product-objects/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
-      },
-      credentials: "include",
-      body: JSON.stringify(formData),
-    });
 
-    if (res.ok) {
+    try {
+      await createProductObject(formData);
       setFormData({ full_sn: "", place_name: "", who_entry: userId });
-      refetch();
       setShowModal(false);
       setShowToast(true);
-    } else {
-      const err = await res.json().catch(() => ({}));
+      refetch();
+    } catch (err) {
       setError(parseApiError(err));
     }
   };
@@ -173,7 +185,16 @@ const AddObjectView: React.FC = () => {
         >
           ← Powrót
         </button>
-        <button className="button-reset" onClick={() => setShowModal(true)}>
+        <button
+          className="button-reset"
+          onClick={() => {
+            if (useWiderCreate) {
+              setShowWiderModal(true);
+            } else {
+              setShowModal(true);
+            }
+          }}
+        >
           ➕ Dodaj nowy
         </button>
         {selectedProcess.settings?.starts?.add_multi && (
@@ -360,6 +381,22 @@ const AddObjectView: React.FC = () => {
           </form>
         </Modal>
       )}
+
+    <WiderCreateModal
+      isOpen={showWiderModal}
+      onClose={() => setShowWiderModal(false)}
+      defaultWhoEntry={userId}
+      onSubmit={async (data) => {
+        try {
+          await createProductObject(data);
+          setShowWiderModal(false);
+          setShowToast(true);
+          refetch();
+        } catch (err) {
+          setError(parseApiError(err));
+        }
+      }}
+    />
 
       {/* NOWY modal: dodawanie wielu SN do wskazanej matki (dziedziczy miejsce z matki) -> /bulk-create-to-mother/ */}
       {showMultiToMotherModal && (
