@@ -73,11 +73,14 @@
 
 .table-actions input[type="text"] {
   padding: 8px 12px;
-  font-size: 14px;
+  font-size: 16px;
   border: 1px solid #ccc;
   border-radius: 6px;
   width: 250px;
   font-family: 'Lato', sans-serif;
+  color: #000;
+  font-weight: 400;
+
 }
 
 .table-actions button {
@@ -281,3 +284,4 @@
   width: 300px;
   padding: 16px;
 }
+

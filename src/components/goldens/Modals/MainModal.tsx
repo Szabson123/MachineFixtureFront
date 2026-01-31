@@ -12,8 +12,9 @@ type Option = { id: number; name: string };
 type Sample = {
   sn: string;
   master_type: number | "";
-  details?: string;        // opis próbki (opcjonalny)
-  _uid?: string;           // lokalny klucz do UI
+  details?: string;
+  location?: string;
+  _uid?: string;
 };
 
 const toNumberOrEmpty = (v: string) => (v === "" ? "" : Number(v));
@@ -91,11 +92,10 @@ const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess })
   const [codeSmd, setCodeSmd] = useState<string>("");
   const [endcodes, setEndcodes] = useState<string>("");
 
-  // Top-level details (pozostaje)
   const [globalDetails, setGlobalDetails] = useState<string>("");
 
   const [samples, setSamples] = useState<Sample[]>([
-    { sn: "", master_type: "", details: "", _uid: uid() },
+    { sn: "", master_type: "", details: "", location: "", _uid: uid() },
   ]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -104,7 +104,7 @@ const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess })
   // stan mini-modala per-sample
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
 
-  const resetForm = () => {
+const resetForm = () => {
     setClient("");
     setProcessName("");
     setDepartament("");
@@ -114,7 +114,8 @@ const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess })
     setCodeSmd("");
     setEndcodes("");
     setGlobalDetails("");
-    setSamples([{ sn: "", master_type: "", details: "", _uid: uid() }]);
+    // Dodaj location: "" tutaj
+    setSamples([{ sn: "", master_type: "", details: "", location: "", _uid: uid() }]);
     setSubmitError(null);
     setEditingIdx(null);
   };
@@ -166,8 +167,8 @@ const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess })
   };
 
   const addSample = () => {
-    setSamples((prev) => [...prev, { sn: "", master_type: "", details: "", _uid: uid() }]);
-  };
+      setSamples((prev) => [...prev, { sn: "", master_type: "", details: "", location: "", _uid: uid() }]);
+    };
 
   const removeSample = (index: number) => {
     setSamples((prev) => prev.filter((_, i) => i !== index));
@@ -178,12 +179,28 @@ const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess })
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
+    const hasEmptySn = samples.some((s) => !s.sn || !s.sn.trim());
+
+    if (hasEmptySn) {
+      setSubmitError("Wszystkie pola SN muszą być wypełnione.");
+      return;
+    }
+    
+    const hasEmptyType = samples.some((s) => s.master_type === "")
+    if (hasEmptyType) {
+        setSubmitError("Każda próbka musi mieć wybrany Typ.");
+        return;
+    }
+
     setIsSubmitting(true);
 
     const samplesPayload = samples
       .map((s) => ({
         sn: s.sn.trim(),
         master_type: s.master_type,
+        // DODAJ TĘ LINIJKĘ PONIŻEJ:
+        ...(s.location && s.location.trim() ? { location: s.location.trim() } : {}),
+        // ------------------------
         ...(s.details && s.details.trim() ? { details: s.details.trim() } : {}),
       }))
       .filter((s) => s.sn !== "" && s.master_type !== "");
@@ -383,7 +400,15 @@ const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess })
                         ))}
                       </select>
 
-                      {/* Przycisk otwierający osobny modal opisu */}
+                      <input
+                        type="text"
+                        className="g-form-input"
+                        placeholder="Lokalizacja"
+                        value={sample.location || ""} 
+                        // TUTAJ ZMIANA: aktualizujemy klucz "location", a nie "sn"
+                        onChange={(e) => handleSampleChange(idx, "location", e.target.value)} 
+                      />
+
                       <button
                         type="button"
                         className="g-details-btn"

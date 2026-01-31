@@ -7,6 +7,7 @@ import ErrorModal from "../shared/ErrorModal";
 import "./views.css";
 import Toast from "../shared/Toast";
 
+import MultiSNModal from "../modals/MultiSNModal";
 
 const MoveObjectView: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -16,6 +17,7 @@ const MoveObjectView: React.FC = () => {
   const [ordering, setOrdering] = useState<string>("-expire_date_final");
   const [showToast, setShowToast] = useState(false);
 
+  const useWiderCreate = Boolean(selectedProcess?.settings?.starts?.move_multi);
 
   const endpoint = `/api/process/${productId}/${selectedProcess.id}/product-objects/?place_isnull=true`;
   const { objects, totalCount, loaderRef, refetch } = useProductObjects(endpoint, ordering);
@@ -29,6 +31,7 @@ const MoveObjectView: React.FC = () => {
   });
 
   const [showMoveModal, setShowMoveModal] = useState(false);
+  const [showMultiModal, setShowMultiModal] = useState(false);
   const fields = selectedProcess?.settings?.fields ?? null;
   const [showMultiToMotherModal, setShowMultiToMotherModal] = useState(false);
   const [motherFullSn, setMotherFullSn] = useState("");
@@ -37,7 +40,6 @@ const MoveObjectView: React.FC = () => {
 
   const [expandedMotherId, setExpandedMotherId] = useState<number | null>(null);
   const [childrenMap, setChildrenMap] = useState<Record<number, any[]>>({});
-
   const [multiSNs, setMultiSNs] = useState<string[]>([""]);
   const [multiErrors, setMultiErrors] = useState<number[]>([]);
   const [error, setError] = useState("");
@@ -49,8 +51,8 @@ const MoveObjectView: React.FC = () => {
     obj?.serial_number ?? obj?.sn_short ?? (obj?.full_sn ? obj.full_sn.slice(-6) : "");
 
   const handleSortChange = (field: string) => {
-  setOrdering((prev) => (prev === field ? `-${field}` : field));
-};
+    setOrdering((prev) => (prev === field ? `-${field}` : field));
+  };
 
   const parseApiError = (err: any): string => {
     if (!err) return "Wystąpił nieznany błąd.";
@@ -160,6 +162,41 @@ const MoveObjectView: React.FC = () => {
     }
   };
 
+  const handleMultiMoveSubmit = async (sns: string[]) => {
+    
+    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "";
+    
+    const payload = {
+      full_sn: sns,
+      movement_type: "move",
+      who: userId
+    };
+
+    try {
+      const res = await fetch(`/api/process/product-object/move-list/${selectedProcess.id}/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        refetch();
+        setShowToast(true);
+        setShowMultiModal(false);
+      } else {
+        setError(parseApiError(data) || "Wystąpił błąd podczas masowego przenoszenia.");
+      }
+    } catch (err) {
+      setError("Wystąpił błąd sieci.");
+    }
+  };
+
   useEffect(() => {
     if (showMoveModal && inputRef.current) inputRef.current.focus();
   }, [showMoveModal]);
@@ -246,12 +283,9 @@ const MoveObjectView: React.FC = () => {
   };
 
   useEffect(() => {
-  if (error) {
-    setFormData({ full_sn: "", who: userId, place_name: "" });
-    setMultiSNs([""]);
-    setMultiErrors([]);
-  }
-}, [error]);
+    if (error) {
+    }
+  }, [error]);
 
   return (
     <div className="fixture-table-container">
@@ -270,9 +304,19 @@ const MoveObjectView: React.FC = () => {
         >
           ← Powrót
         </button>
+        
         <button className="button-reset" onClick={() => setShowMoveModal(true)}>
           ➕ Przenieś nowy
         </button>
+        {useWiderCreate && (
+          <button 
+            className="button-reset" 
+            style={{ marginLeft: "10px", backgroundColor: "#b5ffabff", color: "#256400ff" }}
+            onClick={() => setShowMultiModal(true)}
+          >
+            📦 Wyciągnij wiele
+          </button>
+        )}
       </div>
 
       <p className="progress-label margin-plus">Liczba obiektów: {totalCount}</p>
@@ -288,6 +332,7 @@ const MoveObjectView: React.FC = () => {
       />
       <div ref={loaderRef} style={{ height: "40px" }} />
 
+      {/* MODAL 1: POJEDYNCZE PRZENOSZENIE */}
       {showMoveModal && (
         <Modal title="Przenieś produkt" onClose={() => setShowMoveModal(false)} hideFooter>
           <form onSubmit={handleSubmit}>
@@ -308,6 +353,15 @@ const MoveObjectView: React.FC = () => {
         </Modal>
       )}
 
+      {/* --- NOWY MODAL: WYCIĄGNIJ WIELE (Z ukrytym miejscem) --- */}
+      <MultiSNModal 
+        isOpen={showMultiModal}
+        onClose={() => setShowMultiModal(false)}
+        onSubmit={handleMultiMoveSubmit} // Używamy nowej funkcji
+        hidePlace={true}                 // Ukrywamy input miejsca
+      />
+
+      {/* MODAL 3: DODAWANIE DZIECI DO MATKI */}
       {showMultiToMotherModal && (
         <Modal title="Dodaj wiele SN do matki" onClose={() => setShowMultiToMotherModal(false)} hideFooter>
           <form onSubmit={handleBulkAddChildren}>
@@ -377,9 +431,10 @@ const MoveObjectView: React.FC = () => {
           </form>
         </Modal>
       )}
+
       {showToast && (
-  <Toast message="✅ Operacja zakończona pomyślnie!" onClose={() => setShowToast(false)} />
-)}
+        <Toast message="✅ Operacja zakończona pomyślnie!" onClose={() => setShowToast(false)} />
+      )}
 
       {error && <ErrorModal message={error} onClose={() => setError("")} />}
     </div>

@@ -1,278 +1,248 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import "./golden-list.css";
-
 import { useNavigate } from "react-router-dom";
 
+type MasterType = {
+  id: number;
+  name: string;
+  color: string | null;
+};
 
 type Golden = {
   id: number;
-  golden_code: string;
-  expire_date: string;
-  type_golden: string;
-  counter?: number;
-};
-
-type Variant = {
-  id: number;
-  code: string;
-  name?: string;
-  group: number;
-  golden_count: number;
-};
-
-type ManagedGolden = {
-  id: number;
-  golden_code: string;
-  expire_date: string;
-  type_golden: string;
+  sn: string;
+  master_type: MasterType;
   counter: number;
-  variant: {
-    code: string;
-    name: string;
-  };
 };
+
+type PaginatedResponse<T> = {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+};
+
+function useDebouncedValue<T>(value: T, delayMs = 350) {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(t);
+  }, [value, delayMs]);
+
+  return debounced;
+}
+
+function normalizeNext(next: string | null): string | null {
+  if (!next) return null;
+  try {
+    const u = new URL(next, window.location.origin);
+    return `${u.pathname}${u.search}`;
+  } catch {
+    if (next.startsWith("/")) return next;
+    return `/${next}`;
+  }
+}
 
 const GoldenList: React.FC = () => {
-  const [variants, setVariants] = useState<Variant[]>([]);
-  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
-  const [selectedVariantCode, setSelectedVariantCode] = useState<string | null>(null);
-  const [selectedGoldens, setSelectedGoldens] = useState<Golden[]>([]);
-  const [managedGoldens, setManagedGoldens] = useState<ManagedGolden[]>([]);
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [searchSn, setSearchSn] = useState<string>("");
   const navigate = useNavigate();
+
+  const [projects, setProjects] = useState<string[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+
+  const [projectGoldens, setProjectGoldens] = useState<Golden[]>([]);
+  const [allGoldens, setAllGoldens] = useState<Golden[]>([]);
+
+  const [searchProject, setSearchProject] = useState("");
+  const [searchSn, setSearchSn] = useState("");
+
+  const debouncedProject = useDebouncedValue(searchProject, 350);
+  const debouncedSn = useDebouncedValue(searchSn, 350);
 
   const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const managedScrollRef = useRef<HTMLDivElement>(null);
-  const hasFetchedRef = useRef(false);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const projectsAbortRef = useRef<AbortController | null>(null);
+  const allAbortRef = useRef<AbortController | null>(null);
+  const projectGoldensAbortRef = useRef<AbortController | null>(null);
 
-  const fetchVariants = useCallback((term: string = "") => {
-    const url = `/api/golden-samples/variant/${term ? `?search=${encodeURIComponent(term)}` : ""}`;
-    fetch(url)
-      .then((res) => res.json())
-      .then((json: Variant[]) => {
-        setVariants(json);
-        if (
-          selectedVariantId &&
-          !json.some((v) => v.id === selectedVariantId)
-        ) {
-          setSelectedVariantId(null);
-          setSelectedVariantCode(null);
-          setSelectedGoldens([]);
-        }
-      })
-      .catch((err) => console.error("Błąd pobierania wariantów:", err));
-  }, [selectedVariantId]);
+  const loadMoreLockRef = useRef(false);
 
-  const fetchInitialGoldens = useCallback(() => {
-    fetch("/api/golden-samples/goldens/")
-      .then((res) => res.json())
-      .then((json) => {
-        setManagedGoldens(json.results);
-        if (json.next) {
-          const parsedUrl = new URL(json.next);
-          setNextPageUrl(parsedUrl.pathname + parsedUrl.search);
-        } else {
-          setNextPageUrl(null);
-        }
-      })
-      .catch((err) => console.error("Błąd pobierania manage:", err));
+  const typeClass = useCallback((name: string) => {
+    const n = name.toLowerCase();
+    if (n.includes("dobry")) return "good";
+    if (n.includes("kal")) return "calib";
+    return "bad";
   }, []);
-  
-  const fetchGoldensWithSearch = useCallback((searchValue: string) => {
-    const url = `/api/golden-samples/goldens/?search=${encodeURIComponent(searchValue)}`;
-    fetch(url)
-      .then((res) => res.json())
-      .then((json) => {
-        setManagedGoldens(json.results);
-        if (json.next) {
-          const parsedUrl = new URL(json.next);
-          setNextPageUrl(parsedUrl.pathname + parsedUrl.search);
-        } else {
-          setNextPageUrl(null);
-        }
-      })
-      .catch((err) => console.error("Błąd pobierania z filtrem:", err));
+
+  const fetchJson = useCallback(async <T,>(url: string, controllerRef: React.MutableRefObject<AbortController | null>): Promise<T> => {
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
   }, []);
-  
-  const loadMoreGoldens = useCallback(() => {
-    if (!nextPageUrl || loadingMore || hasFetchedRef.current) return;
-  
-    hasFetchedRef.current = true;
-    setLoadingMore(true);
-  
-    const url = `${nextPageUrl}${searchSn ? `&search=${encodeURIComponent(searchSn)}` : ""}`;
-  
-    fetch(url)
-      .then((res) => res.json())
-      .then((json) => {
-        setManagedGoldens((prev) => [...prev, ...json.results]);
-        if (json.next) {
-          const parsedUrl = new URL(json.next);
-          setNextPageUrl(parsedUrl.pathname + parsedUrl.search);
-        } else {
-          setNextPageUrl(null);
-        }
-      })
-      .catch((err) => console.error("Błąd ładowania kolejnych goldenów:", err))
-      .finally(() => {
-        setLoadingMore(false);
-        hasFetchedRef.current = false;
-      });
-  }, [nextPageUrl, loadingMore, searchSn]);
 
-  const fetchGoldensForVariant = (variantId: number) => {
-    fetch(`/api/golden-samples/${variantId}/goldens/`)
-      .then((res) => res.json())
-      .then((data: Golden[]) => setSelectedGoldens(data))
-      .catch((err) => console.error("Błąd pobierania goldenów:", err));
-  };
-
-  useEffect(() => {
-    const id = setTimeout(() => {
-      fetchVariants(searchTerm);
-      if (!searchSn) fetchInitialGoldens();
-    }, 100);
-    return () => clearTimeout(id);
-  }, [searchTerm, fetchVariants, fetchInitialGoldens, searchSn]);
-
-  useEffect(() => {
-    const id = setTimeout(() => {
-      if (searchSn) fetchGoldensWithSearch(searchSn);
-    }, 100);
-    return () => clearTimeout(id);
-  }, [searchSn, fetchGoldensWithSearch]);
-
-  useEffect(() => {
-    const container = managedScrollRef.current;
-    if (!container) return;
-
-    let timeoutId: NodeJS.Timeout;
-
-    const handleScroll = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        const scrollBuffer = 1100;
-        const bottomReached =
-          container.scrollTop + container.clientHeight >= container.scrollHeight - scrollBuffer;
-
-        if (bottomReached) {
-          loadMoreGoldens();
-        }
-      }, 100);
-    };
-
-    container.addEventListener("scroll", handleScroll);
-    return () => container.removeEventListener("scroll", handleScroll);
-  }, [loadMoreGoldens]);
-
-  const getGoldenTypeStyle = (type: string) => {
-    switch (type.toLowerCase()) {
-      case "bad":
-        return "bad";
-      case "good":
-        return "good";
-      case "calib":
-        return "calib";
-      default:
-        return "";
+  const fetchProjects = useCallback(async () => {
+    const url = `/api/golden-samples/variant/${debouncedProject ? `?search=${encodeURIComponent(debouncedProject)}` : ""}`;
+    try {
+      const data = await fetchJson<string[]>(url, projectsAbortRef);
+      setProjects(data);
+      if (selectedProject && !data.includes(selectedProject)) {
+        setSelectedProject(null);
+        setProjectGoldens([]);
+      }
+    } catch (e: any) {
+      if (e?.name !== "AbortError") console.error("Błąd pobierania projektów:", e);
     }
-  };
+  }, [debouncedProject, fetchJson, selectedProject]);
 
-  const getExpireClass = (dateStr: string) => {
-    const today = new Date();
-    const expire = new Date(dateStr);
-    const diff = (expire.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-    if (diff < 0) return "expired";
-    if (diff <= 7) return "expiring-soon";
-    return "";
-  };
+  const fetchGoldensByProject = useCallback(async (project: string) => {
+    try {
+      const url = `/api/golden-samples/goldens/${encodeURIComponent(project)}/`;
+      const data = await fetchJson<Golden[]>(url, projectGoldensAbortRef);
+      setProjectGoldens(data);
+    } catch (e: any) {
+      if (e?.name !== "AbortError") console.error("Błąd pobierania goldenów projektu:", e);
+    }
+  }, [fetchJson]);
+
+  const fetchAllFirstPage = useCallback(async () => {
+    const base = "/api/golden-samples/all/";
+    const url = debouncedSn ? `${base}?search=${encodeURIComponent(debouncedSn)}` : base;
+
+    try {
+      const data = await fetchJson<PaginatedResponse<Golden>>(url, allAbortRef);
+      setAllGoldens(data.results);
+      setNextPageUrl(normalizeNext(data.next));
+    } catch (e: any) {
+      if (e?.name !== "AbortError") console.error("Błąd pobierania wszystkich goldenów:", e);
+    }
+  }, [debouncedSn, fetchJson]);
+
+  const loadMore = useCallback(async () => {
+    if (!nextPageUrl) return;
+    if (loadingMore) return;
+    if (loadMoreLockRef.current) return;
+
+    loadMoreLockRef.current = true;
+    setLoadingMore(true);
+
+    try {
+      const res = await fetch(nextPageUrl);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data: PaginatedResponse<Golden> = await res.json();
+
+      setAllGoldens(prev => [...prev, ...data.results]);
+      setNextPageUrl(normalizeNext(data.next));
+    } catch (e) {
+      console.error("Błąd loadMore:", e);
+    } finally {
+      setLoadingMore(false);
+      loadMoreLockRef.current = false;
+    }
+  }, [nextPageUrl, loadingMore]);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
+
+  useEffect(() => {
+    fetchAllFirstPage();
+  }, [fetchAllFirstPage]);
+
+  useEffect(() => {
+    const el = bottomRef.current;
+    if (!el) return;
+
+    const io = new IntersectionObserver(
+      entries => {
+        const first = entries[0];
+        if (first.isIntersecting) {
+          if (nextPageUrl) loadMore();
+        }
+      },
+      {
+        root: null,
+        rootMargin: "800px",
+        threshold: 0.0,
+      }
+    );
+
+    io.observe(el);
+    return () => io.disconnect();
+  }, [loadMore, nextPageUrl]);
 
   return (
     <div className="golden-app">
       <div className="dashboard">
-        {/* PANEL 1 – Warianty */}
+
         <div className="panel">
           <div className="panel-header">
-            <h3>Kody końcowe</h3>
+            <h3>Projekty</h3>
           </div>
+
           <input
             className="search-input"
-            placeholder="Szukaj wariantu..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Szukaj projektu..."
+            value={searchProject}
+            onChange={(e) => setSearchProject(e.target.value)}
           />
+
           <div className="list-container">
-            {variants.map((variant) => (
+            {projects.map(p => (
               <div
-                key={variant.id}
-                className={`list-item ${selectedVariantId === variant.id ? "selected" : ""}`}
+                key={p}
+                className={`list-item ${p === selectedProject ? "selected" : ""}`}
                 onClick={() => {
-                  setSelectedVariantId(variant.id);
-                  setSelectedVariantCode(variant.code);
-                  fetchGoldensForVariant(variant.id);
+                  setSelectedProject(p);
+                  fetchGoldensByProject(p);
                 }}
               >
-                <div>
-                  <span>
-                    {variant.name ? `${variant.name}` : ""} -- {variant.code}
-                  </span>
-                </div>
-                <span className="status blue">{variant.golden_count} szt.</span>
+                <span>{p}</span>
               </div>
             ))}
+            {projects.length === 0 && <div className="empty-state">Brak danych</div>}
           </div>
         </div>
 
-        {/* PANEL 2 – Goldeny dla wybranego wariantu */}
         <div className="panel">
           <div className="panel-header">
-            <h3>{selectedVariantCode ? `Wzorce dla: ${selectedVariantCode}` : "Wzorce"}</h3>
+            <h3>{selectedProject ? `Wzorce dla: ${selectedProject}` : "Wzorce"}</h3>
           </div>
+
           <div className="list-container">
-            {!selectedVariantId ? (
-              <div className="empty-state centered-message">Wybierz wariant</div>
-            ) : selectedGoldens.length === 0 ? (
-              <div className="empty-state">Brak wzorców dla tego wariantu</div>
+            {!selectedProject ? (
+              <div className="empty-state centered-message">Wybierz projekt</div>
+            ) : projectGoldens.length === 0 ? (
+              <div className="empty-state">Brak wzorców dla tego projektu</div>
             ) : (
-              selectedGoldens.map((golden) => (
-                <div
-                  key={golden.id}
-                  className="list-item"
-                >
+              projectGoldens.map(g => (
+                <div key={g.id} className="list-item">
                   <div className="golden-code-container">
-                    <span
-                      className={`status-icon ${getGoldenTypeStyle(golden.type_golden)}`}
-                      title={golden.type_golden}
-                    />
-                    <span className={`golden-code ${getGoldenTypeStyle(golden.type_golden)}`}>
-                      {golden.golden_code}
-                    </span>
+                    <span className={`status-icon ${typeClass(g.master_type.name)}`} title={g.master_type.name} />
+                    <span className={`golden-code ${typeClass(g.master_type.name)}`}>{g.sn}</span>
                   </div>
                   <div className="expire-date">
-                    <span className={getExpireClass(golden.expire_date)}>
-                      {new Date(golden.expire_date).toLocaleDateString()}
-                    </span>
-                    {typeof golden.counter === "number" && (
-                      <span className="counter-tag">{golden.counter}</span>
-                    )}
+                    <span className="counter-tag">{g.counter}</span>
                   </div>
                 </div>
               ))
             )}
           </div>
         </div>
-
-        {/* PANEL 3 – Wszystkie goldeny */}
         <div className="panel">
           <div className="panel-header">
             <h3>Wszystkie Wzorce</h3>
-                      <button 
-          className="go-to-main-btn"
-          onClick={() => navigate("/goldens/main-table")}
-        >Szczegóły</button>
+            <button
+              className="go-to-main-btn"
+              onClick={() => navigate("/goldens/main-table")}
+            >
+              Szczegóły
+            </button>
           </div>
 
           <input
@@ -281,34 +251,31 @@ const GoldenList: React.FC = () => {
             value={searchSn}
             onChange={(e) => setSearchSn(e.target.value)}
           />
-          <div className="list-container" ref={managedScrollRef}>
-            {managedGoldens.map((golden) => (
-              <div key={golden.id} className="list-item">
+
+          <div className="list-container">
+            {allGoldens.map(g => (
+              <div key={g.id} className="list-item">
                 <div className="golden-code-container">
-                  <span
-                    className={`status-icon ${getGoldenTypeStyle(golden.type_golden)}`}
-                    title={golden.type_golden}
-                  />
-                  <span className={`golden-code ${getGoldenTypeStyle(golden.type_golden)}`}>
-                    {golden.golden_code}
-                  </span>
+                  <span className={`status-icon ${typeClass(g.master_type.name)}`} title={g.master_type.name} />
+                  <span className={`golden-code ${typeClass(g.master_type.name)}`}>{g.sn}</span>
                 </div>
-                <div className={`expire-date ${getExpireClass(golden.expire_date)}`}>
-                  <span>
-                    {new Date(golden.expire_date).toLocaleDateString()}
-                  </span>
-                  <span className="counter-tag">{golden.counter}</span>
+                <div className="expire-date">
+                  <span className="counter-tag">{g.counter}</span>
                 </div>
               </div>
             ))}
-            {managedGoldens.length === 0 && (
-              <div className="empty-state">Brak danych</div>
-            )}
+
+            {allGoldens.length === 0 && <div className="empty-state">Brak danych</div>}
+
+            <div ref={bottomRef} style={{ height: 1 }} />
+
+            {loadingMore && <div className="empty-state">Ładowanie...</div>}
           </div>
         </div>
       </div>
+
       <div className="footer-creditt">
-        Created by Krzysztof Balcerzak & Szymon Żaba
+        Created by Krzysztof Balcerzak &amp; Szymon Żaba
       </div>
     </div>
   );

@@ -20,7 +20,7 @@ interface AdminObject {
   
   quranteen_time: string | null;
 
-  max_in_process: number | null;
+  max_in_process: string | null;
   sito_cycle_limit: number | null;
   sito_cycles_count: number;
   end: boolean;
@@ -214,8 +214,8 @@ useEffect(() => {
         
         {/* Pole typu DATA + CZAS (edytowalne) */}
         <DateTimeRow label="Kwarantanna" name="quranteen_time" value={data.quranteen_time} onChange={handleChange} />
-
-        <Input label="Max w procesie" name="max_in_process" value={data.max_in_process} onChange={handleChange} type="number" />
+        <DateTimeRow label="Max w procesie" name="max_in_process" value={data.max_in_process} onChange={handleChange} />
+        
         <Input label="Limit cykli" name="sito_cycle_limit" value={data.sito_cycle_limit} onChange={handleChange} type="number" />
         <Field label="Ilość cykli" value={data.sito_cycles_count} />
 

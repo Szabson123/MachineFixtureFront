@@ -3,6 +3,9 @@ import "./MainTable.css";
 import MasterSampleModal from "../Modals/MainModal";
 import MasterSampleEditModal from "../Modals/MasterSampleEditModal";
 
+import { useNavigate } from "react-router-dom";
+import { getCSRFToken } from "../../../utils";
+
 type MasterSample = {
   id: number;
   project_name: string;
@@ -10,6 +13,7 @@ type MasterSample = {
   date_created: string;
   expire_date: string;
   pcb_rev_code: string;
+  location: string;
   client: { id: number; name: string };
   process_name: { id: number; name: string };
   master_type: { id: number; name: string; color: string };
@@ -24,6 +28,12 @@ type PaginatedResponse = {
   next: string | null;
   previous: string | null;
   results: MasterSample[];
+};
+
+// Typ dla zalogowanego użytkownika
+type UserData = {
+  first_name: string;
+  last_name: string;
 };
 
 const FIELD_LABELS: Record<string, string> = {
@@ -58,6 +68,10 @@ const MasterSamplesTable: React.FC = () => {
 
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // Zmieniono isAuth na obiekt użytkownika
+  const navigate = useNavigate();
+  const [user, setUser] = useState<UserData | null>(null);
+
   const buildBaseUrl = useCallback(() => {
     const params = new URLSearchParams();
     if (searchTerm) params.append("search", searchTerm);
@@ -83,13 +97,13 @@ const MasterSamplesTable: React.FC = () => {
 
         const res = await fetch(url, { signal: ac.signal });
         if (!res.ok) throw new Error(await res.text());
-          const json: PaginatedResponse = await res.json();
-          setData((prev) => (append ? [...prev, ...json.results] : json.results));
-          setNextUrl(
-            json.next
-              ? new URL(json.next).pathname + new URL(json.next).search
-              : null
-          );
+        const json: PaginatedResponse = await res.json();
+        setData((prev) => (append ? [...prev, ...json.results] : json.results));
+        setNextUrl(
+          json.next
+            ? new URL(json.next).pathname + new URL(json.next).search
+            : null
+        );
       } catch (err: any) {
         if (err?.name !== "AbortError") {
           console.error("Error fetching data:", err);
@@ -100,6 +114,27 @@ const MasterSamplesTable: React.FC = () => {
     },
     []
   );
+
+  // Pobieranie danych użytkownika (imię i nazwisko)
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch("/api/user/auth/me/", {
+          credentials: "include",
+        });
+        if (res.ok) {
+          const userData: UserData = await res.json();
+          setUser(userData);
+        } else {
+          setUser(null);
+        }
+      } catch {
+        setUser(null);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   useEffect(() => {
     const url = buildBaseUrl();
@@ -169,56 +204,56 @@ const MasterSamplesTable: React.FC = () => {
       .finally(() => setLoadingFilters(false));
   };
 
-const handleAddNewItem = async () => {
-  if (!contextField || !newItemName.trim()) return;
-  setIsAdding(true);
+  const handleAddNewItem = async () => {
+    if (!contextField || !newItemName.trim()) return;
+    setIsAdding(true);
 
-  const endpointMap: Record<string, string> = {
-    client: "/api/golden-samples/mastersamples/client-name/",
-    process_name: "/api/golden-samples/mastersamples/process-name/",
-    master_type: "/api/golden-samples/mastersamples/type-name/",
-  };
+    const endpointMap: Record<string, string> = {
+      client: "/api/golden-samples/mastersamples/client-name/",
+      process_name: "/api/golden-samples/mastersamples/process-name/",
+      master_type: "/api/golden-samples/mastersamples/type-name/",
+    };
 
-  const endpoint = endpointMap[contextField];
-  if (!endpoint) return;
+    const endpoint = endpointMap[contextField];
+    if (!endpoint) return;
 
-  try {
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
-      },
-      credentials: "include",
-      body: JSON.stringify({ name: newItemName.trim() }),
-    });
-    if (!res.ok) throw new Error(await res.text());
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
+        },
+        credentials: "include",
+        body: JSON.stringify({ name: newItemName.trim() }),
+      });
+      if (!res.ok) throw new Error(await res.text());
 
-    setNewItemName("");
-    setIsAddModalOpen(false);
-    setContextMenu(null);
+      setNewItemName("");
+      setIsAddModalOpen(false);
+      setContextMenu(null);
 
-    const refetchRes = await fetch(endpoint);
-    if (refetchRes.ok) {
-      const json = await refetchRes.json();
-      setFilterValues(json);
-      setFilterLabels((prev) => ({
-        ...prev,
-        [contextField!]: json.reduce(
-          (acc: { [id: number]: string }, item: { id: number; name: string }) => {
-            acc[item.id] = item.name;
-            return acc;
-          },
-          {}
-        ),
-      }));
+      const refetchRes = await fetch(endpoint);
+      if (refetchRes.ok) {
+        const json = await refetchRes.json();
+        setFilterValues(json);
+        setFilterLabels((prev) => ({
+          ...prev,
+          [contextField!]: json.reduce(
+            (acc: { [id: number]: string }, item: { id: number; name: string }) => {
+              acc[item.id] = item.name;
+              return acc;
+            },
+            {}
+          ),
+        }));
+      }
+    } catch (err) {
+      console.error("Błąd przy dodawaniu nowego elementu:", err);
+    } finally {
+      setIsAdding(false);
     }
-  } catch (err) {
-    console.error("Błąd przy dodawaniu nowego elementu:", err);
-  } finally {
-    setIsAdding(false);
-  }
-};
+  };
 
   const toggleFilter = (id: number) => {
     if (!contextField) return;
@@ -256,27 +291,87 @@ const handleAddNewItem = async () => {
     setOrdering(newOrder);
   };
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/user/auth/logout/", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "X-CSRFToken": getCSRFToken() ?? "",
+        },
+      });
+    } finally {
+      setUser(null);
+    }
+  };
+
   return (
     <div className="all">
       <div className="table-container">
-        <div className="table-actions">
-          <div className="active-filters">
-            {Object.entries(selectedFilters).map(([field, values]) =>
-              values.map((id) => (
-                <span key={`${field}-${id}`} className="filter-tag">
-                  {filterLabels[field]?.[id] || id}
-                  <button
-                    className="filter-remove"
-                    onClick={() => removeFilter(field, id)}
-                    title="Usuń filtr"
-                  >
-                    ✕
-                  </button>
-                </span>
-              ))
+        <div 
+          className="table-actions" 
+          style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '10px'
+          }}
+        >
+          {/* LEWA STRONA: Sekcja Powitania / Logowania */}
+          <div style={{ display: 'flex', alignItems: 'center', marginRight: 'auto' }}>
+            {user ? (
+              <div 
+                onClick={handleLogout}
+                title="Kliknij, aby wylogować"
+                style={{ 
+                  cursor: 'pointer', 
+                  fontSize: '15px', 
+                  color: '#333', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px',
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <span>👋 Cześć, <strong>{user.first_name} {user.last_name}</strong></span>
+                <span style={{ fontSize: '12px', color: '#888', marginLeft: '4px' }}>(Wyloguj)</span>
+              </div>
+            ) : (
+              <button
+                className="a-auth-btn"
+                onClick={() => navigate("/login")}
+                style={{ margin: 0 }} // Reset marginesu jeśli klasa go posiada
+              >
+                Zaloguj
+              </button>
             )}
+
+            {/* Wyświetlanie aktywnych filtrów obok lub pod logowaniem - opcjonalnie */}
+             <div className="active-filters" style={{ marginLeft: '16px' }}>
+                {Object.entries(selectedFilters).map(([field, values]) =>
+                  values.map((id) => (
+                    <span key={`${field}-${id}`} className="filter-tag">
+                      {filterLabels[field]?.[id] || id}
+                      <button
+                        className="filter-remove"
+                        onClick={() => removeFilter(field, id)}
+                        title="Usuń filtr"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))
+                )}
+              </div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+
+          {/* PRAWA STRONA: Wyszukiwarka i Dodawanie */}
+          <div style={{ display: "flex", gap: 8, alignItems: 'center' }}>
             <input
               type="text"
               placeholder="Szukaj..."
@@ -361,6 +456,12 @@ const handleAddNewItem = async () => {
                 </th>
                 <th
                   className="table-title sortable"
+                  onClick={() => handleSort("location")}
+                >
+                  Lokalizacja {ordering === "location" && "↑"} {ordering === "-location" && "↓"}
+                </th>
+                <th
+                  className="table-title sortable"
                   onClick={() => handleSort("date_created")}
                 >
                   Data utworzenia {ordering === "date_created" && "↑"}{" "}
@@ -408,7 +509,7 @@ const handleAddNewItem = async () => {
                 <tr
                   key={sample.id}
                   className="row-clickable"
-                  onClick={() => setEditId(sample.id)}
+                  onDoubleClick={() => setEditId(sample.id)}
                 >
                   <td>{sample.id}</td>
                   <td>{sample.client?.name}</td>
@@ -431,6 +532,9 @@ const handleAddNewItem = async () => {
                     <span className="badge" style={{ backgroundColor: sample.master_type?.color }}>
                       {sample.master_type?.name}
                     </span>
+                  </td>
+                  <td>
+                    {sample.location}
                   </td>
                   <td>{new Date(sample.date_created).toLocaleDateString("pl-PL",{year:"numeric",month:"2-digit",day:"2-digit"})}</td>
                   <td className="highlighted">
@@ -483,6 +587,14 @@ const handleAddNewItem = async () => {
         id={editId}
         isOpen={!!editId}
         onClose={() => setEditId(null)}
+        onDeleteSuccess={() => {
+          setEditId(null);
+          const url = buildBaseUrl();
+          setData([]);
+          setNextUrl(null);
+          fetchPage(url, false);
+
+        }}
         onSuccess={(updatedRow) => {
           setData((prev) => prev.map((it) => (it.id === updatedRow.id ? { ...it, ...updatedRow } : it)));
         }}

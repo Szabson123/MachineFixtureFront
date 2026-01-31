@@ -5,9 +5,15 @@ interface MultiSNModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (sns: string[], placeName: string) => void;
+  hidePlace?: boolean;
 }
 
-const MultiSNModal: React.FC<MultiSNModalProps> = ({ isOpen, onClose, onSubmit }) => {
+const MultiSNModal: React.FC<MultiSNModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSubmit, 
+  hidePlace = false
+}) => {
   const [multiSNs, setMultiSNs] = useState<string[]>([""]);
   const [multiErrors, setMultiErrors] = useState<number[]>([]);
   const [placeName, setPlaceName] = useState("");
@@ -17,10 +23,14 @@ const MultiSNModal: React.FC<MultiSNModalProps> = ({ isOpen, onClose, onSubmit }
   const multiSNRefs = useRef<HTMLInputElement[]>([]);
 
   useEffect(() => {
-    if (isOpen && placeInputRef.current) {
-      setTimeout(() => placeInputRef.current?.focus(), 100);
+    if (isOpen) {
+      if (hidePlace) {
+        setTimeout(() => multiSNRefs.current[0]?.focus(), 100);
+      } else if (placeInputRef.current) {
+        setTimeout(() => placeInputRef.current?.focus(), 100);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, hidePlace]);
 
   const handleMultiSNChange = (index: number, value: string) => {
     const updated = [...multiSNs];
@@ -46,10 +56,11 @@ const MultiSNModal: React.FC<MultiSNModalProps> = ({ isOpen, onClose, onSubmit }
     const filtered = multiSNs.filter((sn) => sn.trim() !== "");
     const unique = [...new Set(filtered)];
 
-    if (!placeName.trim()) {
+    if (!hidePlace && !placeName.trim()) {
       setError("Podaj miejsce.");
       return;
     }
+    
     if (filtered.length !== unique.length) {
       setError("Znaleziono duplikaty numerów SN!");
       return;
@@ -60,6 +71,8 @@ const MultiSNModal: React.FC<MultiSNModalProps> = ({ isOpen, onClose, onSubmit }
     }
 
     onSubmit(unique, placeName);
+    
+    // Reset stanu po sukcesie
     setMultiSNs([""]);
     setMultiErrors([]);
     setPlaceName("");
@@ -72,21 +85,24 @@ const MultiSNModal: React.FC<MultiSNModalProps> = ({ isOpen, onClose, onSubmit }
   return (
     <Modal title="Pobierz z magazynku" onClose={onClose} hideFooter>
       <form onSubmit={handleSubmit}>
-        <label>
-          Miejsce:
-          <input
-            ref={placeInputRef}
-            value={placeName}
-            onChange={(e) => setPlaceName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                multiSNRefs.current[0]?.focus();
-              }
-            }}
-            required
-          />
-        </label>
+        
+        {!hidePlace && (
+          <label>
+            Miejsce:
+            <input
+              ref={placeInputRef}
+              value={placeName}
+              onChange={(e) => setPlaceName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  multiSNRefs.current[0]?.focus();
+                }
+              }}
+              required={!hidePlace}
+            />
+          </label>
+        )}
 
         <div
           style={{
@@ -125,6 +141,8 @@ const MultiSNModal: React.FC<MultiSNModalProps> = ({ isOpen, onClose, onSubmit }
                         }, 0);
                         return updated;
                       });
+                    } else if (!isLast) {
+                        multiSNRefs.current[index + 1]?.focus();
                     }
                   }
                 }}

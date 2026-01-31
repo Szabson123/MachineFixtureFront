@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./MainModal.css";
+import { getCSRFToken } from "../../../utils";
 
 type Option = { id: number; name: string };
 
@@ -8,6 +9,7 @@ interface EditModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (updatedRow: any) => void;
+  onDeleteSuccess?: (deletedId: number) => void; 
 }
 
 const toNumberOrEmpty = (v: string) => (v === "" ? "" : Number(v));
@@ -36,6 +38,7 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  onDeleteSuccess,
 }) => {
   const [clients, setClients] = useState<Option[]>([]);
   const [processes, setProcesses] = useState<Option[]>([]);
@@ -62,9 +65,10 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [location, setLocation] = useState("");
+
   useEffect(() => {
     if (!isOpen || !id) return;
-
     setLoadingDicts(true);
     Promise.all([
       fetch("/api/golden-samples/mastersamples/client-name/").then(r => r.json()),
@@ -79,7 +83,7 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
       .finally(() => setLoadingDicts(false));
   }, [isOpen, id]);
 
-    useEffect(() => {
+  useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -93,7 +97,6 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
 
   useEffect(() => {
     if (!isOpen || !id) return;
-
     (async () => {
       try {
         setLoading(true);
@@ -114,6 +117,8 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
         setPcbRevCode(data.pcb_rev_code ?? "R1");
         setDetails((data.details ?? "") || "");
 
+        setLocation((data.location ?? "") || "");
+
         const smd = normalizeCodes(data.code_smd);
         const end = normalizeCodes(data.endcodes);
         setCodeSmd(smd.join(", "));
@@ -132,6 +137,39 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
   const buildCodes = (value: string) =>
     Array.from(new Set(value.split(",").map(s => s.trim()).filter(Boolean)));
 
+  const handleDelete = async () => {
+    if (!window.confirm("Czy na pewno chcesz trwale usunąć ten Master Sample? Operacji nie można cofnąć.")) {
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    const csrfToken = getCSRFToken();
+
+    try {
+      const res = await fetch(`/api/golden-samples/mastersamples/${id}/`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          "X-CSRFToken": csrfToken || "",
+        },
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+
+      if (onDeleteSuccess) {
+        onDeleteSuccess(id);
+      } else {
+        onClose(); 
+      }
+    } catch (e: any) {
+      console.error(e);
+      setError("Nie udało się usunąć rekordu.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -148,16 +186,29 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
       expire_date: expireDate,
       pcb_rev_code: pcbRevCode.trim(),
       details: details.trim() || null,
+      location: location.trim(),
       code_smd: buildCodes(codeSmd),
       endcodes: buildCodes(endcodes),
     };
 
+    const csrfToken = getCSRFToken();
+    if (!csrfToken) {
+      setError("Brak CSRF tokena – odśwież stronę.");
+      setSaving(false);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/golden-samples/mastersamples/${id}/`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
         body: JSON.stringify(payload),
       });
+
       if (!res.ok) throw new Error(await res.text());
       const updatedListItem = await res.json();
       onSuccess(updatedListItem);
@@ -186,145 +237,128 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
               <div className="g-form-grid">
                 <div className="g-form-group">
                   <label className="g-form-label">Klient</label>
-                  <select
-                    className="g-form-select"
-                    value={client}
-                    onChange={(e) => setClient(toNumberOrEmpty(e.target.value))}
-                  >
+                  <select className="g-form-select" value={client} onChange={(e) => setClient(toNumberOrEmpty(e.target.value))}>
                     <option value="">-- Wybierz klienta --</option>
-                    {clients.map((c) => (
-                      <option key={c.id} value={String(c.id)}>{c.name}</option>
-                    ))}
+                    {clients.map((c) => <option key={c.id} value={String(c.id)}>{c.name}</option>)}
                   </select>
                 </div>
-
                 <div className="g-form-group">
                   <label className="g-form-label">Proces</label>
-                  <select
-                    className="g-form-select"
-                    value={processName}
-                    onChange={(e) => setProcessName(toNumberOrEmpty(e.target.value))}
-                  >
+                  <select className="g-form-select" value={processName} onChange={(e) => setProcessName(toNumberOrEmpty(e.target.value))}>
                     <option value="">-- Wybierz proces --</option>
-                    {processes.map((p) => (
-                      <option key={p.id} value={String(p.id)}>{p.name}</option>
-                    ))}
+                    {processes.map((p) => <option key={p.id} value={String(p.id)}>{p.name}</option>)}
                   </select>
                 </div>
-
                 <div className="g-form-group">
                   <label className="g-form-label">Wydział</label>
-                  <select
-                    className="g-form-select"
-                    value={departament}
-                    onChange={(e) => setDepartament(toNumberOrEmpty(e.target.value))}
-                  >
+                  <select className="g-form-select" value={departament} onChange={(e) => setDepartament(toNumberOrEmpty(e.target.value))}>
                     <option value="">-- Wybierz wydział --</option>
-                    {departaments.map((d) => (
-                      <option key={d.id} value={String(d.id)}>{d.name}</option>
-                    ))}
+                    {departaments.map((d) => <option key={d.id} value={String(d.id)}>{d.name}</option>)}
                   </select>
                 </div>
-
                 <div className="g-form-group">
                   <label className="g-form-label">Typ</label>
-                  <select
-                    className="g-form-select"
-                    value={masterType}
-                    onChange={(e) => setMasterType(toNumberOrEmpty(e.target.value))}
-                  >
+                  <select className="g-form-select" value={masterType} onChange={(e) => setMasterType(toNumberOrEmpty(e.target.value))}>
                     <option value="">-- Wybierz typ --</option>
-                    {types.map((t) => (
-                      <option key={t.id} value={String(t.id)}>{t.name}</option>
-                    ))}
+                    {types.map((t) => <option key={t.id} value={String(t.id)}>{t.name}</option>)}
                   </select>
                 </div>
-
                 <div className="g-form-group">
                   <label className="g-form-label">Nazwa projektu</label>
-                  <input
-                    type="text"
-                    className="g-form-input"
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                  />
+                  <input type="text" className="g-form-input" value={projectName} onChange={(e) => setProjectName(e.target.value)} />
                 </div>
-
                 <div className="g-form-group">
                   <label className="g-form-label">SN</label>
-                  <input
-                    type="text"
-                    className="g-form-input"
-                    value={sn}
-                    onChange={(e) => setSn(e.target.value)}
-                  />
+                  <input type="text" className="g-form-input" value={sn} onChange={(e) => setSn(e.target.value)} />
                 </div>
-
                 <div className="g-form-group">
                   <label className="g-form-label">Data ważności</label>
-                  <input
-                    type="date"
-                    className="g-form-input"
-                    value={expireDate}
-                    onChange={(e) => setExpireDate(e.target.value)}
-                  />
+                  <input type="date" className="g-form-input" value={expireDate} onChange={(e) => setExpireDate(e.target.value)} />
                 </div>
-
                 <div className="g-form-group">
                   <label className="g-form-label">PCB Rev Code</label>
-                  <input
-                    type="text"
-                    className="g-form-input"
-                    value={pcbRevCode}
-                    onChange={(e) => setPcbRevCode(e.target.value)}
-                  />
+                  <input type="text" className="g-form-input" value={pcbRevCode} onChange={(e) => setPcbRevCode(e.target.value)} />
                 </div>
-
                 <div className="g-form-group g-fullspan">
                   <label className="g-form-label">Szczegóły (details)</label>
-                  <textarea
-                    className="g-form-textarea"
-                    rows={3}
-                    value={details}
-                    onChange={(e) => setDetails(e.target.value)}
-                    placeholder="Opis / notatki do Master Sample"
-                  />
+                  <textarea className="g-form-textarea" rows={3} value={details} onChange={(e) => setDetails(e.target.value)} placeholder="Opis / notatki do Master Sample" />
                 </div>
-
-                <div className="g-form-group">
+                <div style={{ display: "flex", gap: "16px", gridColumn: "1 / -1" }}>
+  
+                {/* Code SMD */}
+                <div className="g-form-group" style={{ flex: 1 }}>
                   <label className="g-form-label">Code SMD</label>
-                  <input
-                    type="text"
-                    className="g-form-input"
-                    placeholder="np. 20415664, 20415666"
-                    value={codeSmd}
-                    onChange={(e) => setCodeSmd(e.target.value)}
+                  <input 
+                    type="text" 
+                    className="g-form-input" 
+                    placeholder="np. 20415664..." 
+                    value={codeSmd} 
+                    onChange={(e) => setCodeSmd(e.target.value)} 
                   />
-                  <div className="g-form-hint">Kody SMD oddzielone przecinkami</div>
+                  <div className="g-form-hint">Oddzielone przecinkami</div>
                 </div>
 
-                <div className="g-form-group">
-                  <label className="g-form-label">Kody Końcowe</label>
-                  <input
-                    type="text"
-                    className="g-form-input"
-                    placeholder="np. 30415999, 30415998"
-                    value={endcodes}
-                    onChange={(e) => setEndcodes(e.target.value)}
+                {/* Lokalizacja */}
+                <div className="g-form-group" style={{ flex: 1 }}>
+                  <label className="g-form-label">Lokalizacja</label>
+                  <input 
+                    type="text" 
+                    className="g-form-input" 
+                    placeholder="np. 5/1234" 
+                    value={location} 
+                    onChange={(e) => setLocation(e.target.value)} 
                   />
-                  <div className="g-form-hint">Endcodes oddzielone przecinkami</div>
                 </div>
+
+                {/* Kody Końcowe */}
+                <div className="g-form-group" style={{ flex: 1 }}>
+                  <label className="g-form-label">Kody Końcowe</label>
+                  <input 
+                    type="text" 
+                    className="g-form-input" 
+                    placeholder="np. 30415999..." 
+                    value={endcodes} 
+                    onChange={(e) => setEndcodes(e.target.value)} 
+                  />
+                  <div className="g-form-hint">Oddzielone przecinkami</div>
+                </div>
+
+              </div>
               </div>
 
               {error && <div style={{ color: "#c53030", marginTop: 8 }}>{error}</div>}
 
-              <div className="g-modal-actions">
-                <button type="button" className="g-cancel-btn" onClick={onClose} disabled={saving}>
-                  Anuluj
+              <div className="g-modal-actions" style={{ justifyContent: 'space-between', display: 'flex', gap: '10px' }}>
+
+                <button 
+                  type="button" 
+                  className="g-delete-btn" 
+                  onClick={handleDelete} 
+                  disabled={saving}
+                  title="Usuń ten rekord"
+                >
+                  <svg 
+                    width="16" height="16" viewBox="0 0 24 24" 
+                    fill="none" stroke="currentColor" strokeWidth="2" 
+                    strokeLinecap="round" strokeLinejoin="round"
+                    style={{ marginRight: 6 }}
+                  >
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
+                  Usuń
                 </button>
-                <button type="submit" className="g-save-btn" disabled={saving}>
-                  {saving ? "Zapisywanie..." : "Zapisz zmiany"}
-                </button>
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button type="button" className="g-cancel-btn" onClick={onClose} disabled={saving}>
+                    Anuluj
+                  </button>
+                  <button type="submit" className="g-save-btn" disabled={saving}>
+                    {saving ? "Zapisywanie..." : "Zapisz zmiany"}
+                  </button>
+                </div>
               </div>
             </>
           )}

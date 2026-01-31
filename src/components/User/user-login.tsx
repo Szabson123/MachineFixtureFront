@@ -36,7 +36,7 @@ const Login = () => {
         throw new Error(data?.detail || "Błędne dane logowania");
       }
 
-      navigate("/admin/main-page", { replace: true });
+      navigate(-1);
     } catch (err: any) {
       setError(err.message);
     } finally {

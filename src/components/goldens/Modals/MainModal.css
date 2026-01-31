@@ -15,13 +15,12 @@
   backdrop-filter: blur(4px);
 }
 
-/* Modal Content */
 .g-modal-content {
   background: white;
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   width: 90%;
-  max-width: 800px;
+  max-width: 1000px;
   max-height: 90vh;
   overflow-y: auto;
   animation: g-modal-appear 0.3s ease-out;
@@ -429,3 +428,35 @@
   font-size: 0.9rem;
 }
 .g-cancel-small:hover { background: #f7fafc; }
+
+
+.g-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  background-color: #e53e3e;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.g-delete-btn:hover {
+  background-color: #c53030;
+}
+
+.g-delete-btn:disabled {
+  background-color: #feb2b2;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.g-modal-actions {
+  display: flex;
+  align-items: center;
+  margin-top: 24px;
+}
