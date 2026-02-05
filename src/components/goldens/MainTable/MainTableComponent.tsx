@@ -30,7 +30,6 @@ type PaginatedResponse = {
   results: MasterSample[];
 };
 
-// Typ dla zalogowanego użytkownika
 type UserData = {
   first_name: string;
   last_name: string;
@@ -68,7 +67,6 @@ const MasterSamplesTable: React.FC = () => {
 
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Zmieniono isAuth na obiekt użytkownika
   const navigate = useNavigate();
   const [user, setUser] = useState<UserData | null>(null);
 
