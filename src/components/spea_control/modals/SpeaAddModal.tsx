@@ -38,8 +38,13 @@ export const SpeaAddModal = ({ isOpen, onClose }: SpeaAddModalProps) => {
 
       const response = await fetch('/api/spea-card/objects/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "",
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+        
       });
 
       if (!response.ok) {

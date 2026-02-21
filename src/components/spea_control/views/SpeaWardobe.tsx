@@ -183,7 +183,7 @@ useEffect(() => {
           renderDownloadBtn={renderDownloadButton}
           
           onAction={(id) => handleTableAction(id, 'fix')}
-          actionLabel="Naprawiony 🔧"
+          actionLabel="Napraw 🔧"
           actionClass="spea-btn-fix"
 
           onSecondaryAction={handleSendToService}

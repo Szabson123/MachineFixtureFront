@@ -29,14 +29,19 @@ export const useSpeaFiles = () => {
 
   const renderDownloadButton = (fileUrl: string | null, sn: string) => {
     if (!fileUrl) return null;
+
+    const correctedUrl = fileUrl.includes('/media/') 
+      ? '/media/' + fileUrl.split('/media/')[1] 
+      : fileUrl;
+
     const prettyFileName = `Raport_SPEA_${sn}.txt`;
 
     return (
       <a 
-        href={fileUrl} 
+        href={correctedUrl} 
         className="spea-btn-download"
         title="Pobierz plik diagnostyczny"
-        onClick={(e) => handleForceDownload(e, fileUrl, prettyFileName)}
+        onClick={(e) => handleForceDownload(e, correctedUrl, prettyFileName)}
       >
         📄 Pobierz
       </a>

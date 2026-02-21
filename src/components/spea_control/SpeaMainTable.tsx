@@ -46,7 +46,8 @@ export const SpeaGenericTable = ({
 }: SpeaGenericTableProps) => {
   
   return (
-    <div className="spea-column" style={{width: '100%', maxWidth: '1200px'}}> {/* Szersza tabela */}
+    <div className="spea-column spea-table-wrapper">
+      
       <div className="spea-table-header">
         <h2 className="spea-title">{title} ({items.length})</h2>
 
@@ -71,23 +72,38 @@ export const SpeaGenericTable = ({
                 <th className="spea-th">Kategoria</th>
                 <th className="spea-th">Nr Seryjny (SN)</th>
                 <th className="spea-th">Lokalizacja</th>
-                <th className="spea-th" style={{minWidth: '250px'}}>Akcja</th>
+                <th className="spea-th spea-th-actions">Akcja</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => (
                 <tr key={item.id}>
-                  <td className="spea-td">{item.category}</td>
-                  <td className="spea-td">{item.sn}</td>
                   <td className="spea-td">
-                    {item.location ? item.location.name : <span style={{color: '#999'}}>- Brak -</span>}
-                    {/* Info dodatkowe o stanie */}
-                    {item.out_of_company && <span style={{marginLeft: '5px', fontSize: '0.8em'}}>🌍</span>}
-                    {item.is_broken && <span style={{marginLeft: '5px', fontSize: '0.8em'}}>💥</span>}
+                    <span className="spea-text-limit" title={item.category}>
+                      {item.category}
+                    </span>
                   </td>
+                  
+                  <td className="spea-td spea-td-sn">
+
+                    <span className="spea-text-limit" title={item.sn}>
+                      {item.sn}
+                    </span>
+                  </td>
+                  
                   <td className="spea-td">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                  
+                    {item.location ? (
+                      <span className="spea-location-badge">{item.location.name}</span>
+                    ) : (
+                      <span className="spea-empty-text">- Brak -</span>
+                    )}
+                    
+                    {item.out_of_company && <span className="spea-status-icon" title="Poza firmą">🌍</span>}
+                  </td>
+                  
+                  <td className="spea-td">
+                    <div className="spea-actions-row">
+                      
                       {renderActions ? (
                         renderActions(item)
                       ) : (

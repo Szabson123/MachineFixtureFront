@@ -41,6 +41,7 @@ export const AllSpea = () => {
       setLoading(false);
     }
   };
+  const getCsrfToken = () => document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/)?.[1] || "";
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -50,9 +51,22 @@ export const AllSpea = () => {
     return () => clearTimeout(delayDebounceFn);
   }, [search, refreshKey]);
 
-  const changeApiStatus = async (id: number, suffix: string) => {
-    const response = await fetch(`/api/spea-card/objects/${id}/${suffix}/`, { method: 'POST' });
-    if (!response.ok) throw new Error('Błąd API');
+  const changeApiStatus = async (id: number, suffix: string, bodyData: object | null = null) => {
+    const response = await fetch(`/api/spea-card/objects/${id}/${suffix}/`, {
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCsrfToken(),
+      },
+      credentials: "include",
+      body: bodyData ? JSON.stringify(bodyData) : undefined, // Dodajemy body jeśli istnieje
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Błąd API');
+    }
+    return response;
   };
 
   const handleConfirmBreak = async () => {
@@ -88,14 +102,12 @@ export const AllSpea = () => {
   const handleIssueSubmit = async (name: string) => {
     if (!currentIssueId) return;
     try {
-      await fetch(`/api/spea-card/objects/${currentIssueId}/change_place/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
-      });
+      await changeApiStatus(currentIssueId, 'change_place', { name });
       addToast(`Wydano na: ${name} 📦`, "success");
       fetchData();
-    } catch { addToast("Błąd wydawania", "error"); }
+    } catch { 
+      addToast("Błąd wydawania", "error"); 
+    }
   };
 
   const renderRowActions = (item: SpeaItem) => {
