@@ -14,6 +14,8 @@ export const SpeaOutOfCompany = () => {
   const { renderDownloadButton } = useSpeaFiles();
   const { refreshKey } = useSpeaRefresh();
 
+  const getCsrfToken = () => document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/)?.[1] || "";
+
   const fetchData = async () => {
     try {
       let url = '/api/spea-card/objects/?location_in_company=False';
@@ -33,6 +35,24 @@ export const SpeaOutOfCompany = () => {
     }
   };
 
+  const changeApiStatus = async (id: number, suffix: string, bodyData: object | null = null) => {
+    const response = await fetch(`/api/spea-card/objects/${id}/${suffix}/`, {
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCsrfToken(),
+      },
+      credentials: "include",
+      body: bodyData ? JSON.stringify(bodyData) : undefined,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Błąd API');
+    }
+    return response;
+  };
+
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchData();
@@ -41,8 +61,14 @@ export const SpeaOutOfCompany = () => {
     return () => clearTimeout(delayDebounceFn);
   }, [search, refreshKey]);
 
-  const handleReturnToCompany = async (id: number) => {
-      console.log("Powrót", id);
+  const handleBackToWardrobe = async (id: number) => {
+    try {
+      await changeApiStatus(id, 'back_to_wardrobe');
+      addToast("Zwrócono do szafy! 🚪", "success");
+      fetchData();
+    } catch (error) { 
+      addToast("Błąd zwrotu", "error"); 
+    }
   };
 
   if (loading) {
@@ -62,7 +88,7 @@ export const SpeaOutOfCompany = () => {
           items={items} 
           renderDownloadBtn={renderDownloadButton}
           
-          onAction={handleReturnToCompany}
+          onAction={handleBackToWardrobe}
           actionLabel="Wróć do firmy ↩️"
           actionClass="spea-btn-back-company"
 

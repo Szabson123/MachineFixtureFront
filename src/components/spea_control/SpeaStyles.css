@@ -427,6 +427,11 @@
   /* Resetujemy scrolla, żeby działał wewnątrz ramki */
   display: flex;
   flex-direction: column;
+
+  max-height: 650px;
+  overflow-y: auto;
+  
+  display: block;
 }
 
 .spea-th {
