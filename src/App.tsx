@@ -30,6 +30,8 @@ import AdminProductObjectDetailsPage from './components/admin/admin-process/admi
 import Login from './components/User/user-login';
 import RequireAuth from './components/User/RequiredAuth';
 
+import DashboardGoldens from './components/goldens/MainTable/DashboardGoldens';
+
 import { SpeaWardrobe } from './components/spea_control/views/SpeaWardobe';
 import { SpeaInCompany } from './components/spea_control/views/SpeaInCompany';
 import { SpeaOutOfCompany } from './components/spea_control/views/SpeaOutOfCompany';
@@ -53,9 +55,9 @@ function App() {
         <Route index element={<SpeaWardrobe />} />
 
       </Route>
-
         <Route path="/goldens" element={<GoldenList />} />
         <Route path="/goldens/main-table" element={<MainTable />} />
+        <Route path="/goldens/dashboard" element={<DashboardGoldens />} />
         <Route path="/process" element={<ProductList />} />
         <Route path="/traceability" element={<ProductLogList />} />
         <Route path="/machine-statuses" element={<MachineStatuses />} />
@@ -71,7 +73,7 @@ function App() {
         {/* PUBLIC ADMIN */}
         <Route path="/admin/main-page" element={<AdminMainPage />} />
 
-        {/* 🔒 CHRONIONE ADMIN */}
+        {/* CHRONIONE ADMIN */}
         <Route path="/admin" element={<RequireAuth />}>
           <Route path="process-list" element={<AdminProcessesPage />} />
           <Route path="product-object/:objectId" element={<AdminProductObjectDetailsPage />} />

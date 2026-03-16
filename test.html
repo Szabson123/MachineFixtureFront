@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centrum Dowodzenia - Golden Samples (Jasny)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Delikatny efekt glow dopasowany do jasnego tła */
+        .glow-green { box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.25); }
+        .glow-red { box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.25); }
+        .glow-blue { box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.25); }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-8 border-b border-gray-200 pb-4 flex justify-between items-end">
+            <div>
+                <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-500">
+                    Golden Samples
+                </h1>
+                <p class="text-gray-500 text-sm mt-1">Centrum Dowodzenia Próbkami | Status: Oczekiwanie na dane</p>
+            </div>
+            <div class="text-xs font-mono bg-white px-3 py-1 rounded text-gray-500 border border-gray-200 shadow-sm">
+                Ostatnia aktualizacja: Teraz
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-xl p-6 border-t-4 border-gray-400 shadow-md relative overflow-hidden">
+                <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Wszystkie próbki</h2>
+                <p class="text-5xl font-black text-gray-800 mt-2">0</p>
+                <div class="absolute -bottom-4 -right-4 text-7xl opacity-5 grayscale">📦</div>
+            </div>
+            <div class="bg-white rounded-xl p-6 border-t-4 border-red-500 glow-red shadow-md relative overflow-hidden">
+                <h2 class="text-sm font-semibold text-red-500 uppercase tracking-wider">Przeterminowane</h2>
+                <p class="text-5xl font-black text-red-600 mt-2">0</p>
+                <div class="absolute -bottom-4 -right-4 text-7xl opacity-10">☠️</div>
+            </div>
+            <div class="bg-white rounded-xl p-6 border-t-4 border-emerald-500 glow-green shadow-md relative overflow-hidden">
+                <h2 class="text-sm font-semibold text-emerald-500 uppercase tracking-wider">Aktualne</h2>
+                <p class="text-5xl font-black text-emerald-600 mt-2">0</p>
+                <div class="absolute -bottom-4 -right-4 text-7xl opacity-10">✓</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <div class="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+                <h2 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
+                    <span class="mr-2">📊</span> Podział typów
+                </h2>
+                <div class="relative w-full max-w-[300px] mx-auto aspect-square">
+                    <canvas id="typeChart"></canvas>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-4">
+                        <span class="text-3xl font-black text-gray-800" id="totalTypes">0</span>
+                        <span class="text-xs text-gray-500">Suma (symulacja)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 shadow-md border border-gray-100 flex flex-col">
+                <h2 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
+                    <span class="mr-2">🏆</span> Hala Sław (obecnie pusta)
+                </h2>
+                
+                <div class="flex-grow flex flex-col justify-center space-y-6">
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 flex justify-between items-center transition hover:bg-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-white rounded-full shadow-sm text-xl">🏢</div>
+                            <div>
+                                <p class="text-sm text-gray-500">Top Klient</p>
+                                <p class="font-bold text-gray-800">Brak danych</p>
+                            </div>
+                        </div>
+                        <span class="text-xs bg-white text-gray-500 px-2 py-1 rounded border border-gray-200 shadow-sm">Czekamy na start</span>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 flex justify-between items-center transition hover:bg-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-white rounded-full shadow-sm text-xl">👤</div>
+                            <div>
+                                <p class="text-sm text-gray-500">Najaktywniejszy użytkownik</p>
+                                <p class="font-bold text-gray-800">Brak danych</p>
+                            </div>
+                        </div>
+                        <span class="text-xs bg-white text-gray-500 px-2 py-1 rounded border border-gray-200 shadow-sm">Ktoś musi zacząć</span>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 flex justify-between items-center transition hover:bg-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-white rounded-full shadow-sm text-xl">⏱️</div>
+                            <div>
+                                <p class="text-sm text-gray-500">Najwyższy licznik</p>
+                                <p class="font-bold text-gray-800">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        const dataPass = 45; // Symulacja wartości
+        const dataFail = 15; // Symulacja wartości
+        const dataCalib = 30; // Symulacja wartości
+        
+        // Aktualizacja sumy w środku kółka
+        document.getElementById('totalTypes').innerText = (dataPass + dataFail + dataCalib).toString();
+
+        const ctx = document.getElementById('typeChart').getContext('2d');
+        const typeChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pass', 'Fail', 'Calib'],
+                datasets: [{
+                    data: [dataPass, dataFail, dataCalib],
+                    backgroundColor: [
+                        '#10b981', // Szmaragdowy (Green) dla Pass
+                        '#ef4444', // Czerwony (Red) dla Fail
+                        '#3b82f6'  // Niebieski (Blue) dla Calib
+                    ],
+                    borderColor: '#ffffff', // Biały kolor ramki na jasnym tle
+                    borderWidth: 4,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '75%', 
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#4b5563', // Ciemniejszy szary dla tekstu legendy
+                            padding: 20,
+                            font: {
+                                size: 14,
+                                family: 'sans-serif'
+                            },
+                            usePointStyle: true,
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        titleColor: '#1f2937',
+                        bodyColor: '#4b5563',
+                        borderColor: '#e5e7eb',
+                        borderWidth: 1,
+                        padding: 10,
+                        displayColors: true,
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

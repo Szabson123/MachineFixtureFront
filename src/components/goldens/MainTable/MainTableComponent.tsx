@@ -57,6 +57,7 @@ const MasterSamplesTable: React.FC = () => {
   const [filterLabels, setFilterLabels] = useState<{ [key: string]: { [id: number]: string } }>({});
   const [selectedFilters, setSelectedFilters] = useState<{ [key: string]: number[] }>({});
   const [loadingFilters, setLoadingFilters] = useState(false);
+  const [totalCount, setTotalCount] = useState<number>(0);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -97,6 +98,7 @@ const MasterSamplesTable: React.FC = () => {
         if (!res.ok) throw new Error(await res.text());
         const json: PaginatedResponse = await res.json();
         setData((prev) => (append ? [...prev, ...json.results] : json.results));
+        setTotalCount(json.count);
         setNextUrl(
           json.next
             ? new URL(json.next).pathname + new URL(json.next).search
@@ -370,6 +372,9 @@ const MasterSamplesTable: React.FC = () => {
 
           {/* PRAWA STRONA: Wyszukiwarka i Dodawanie */}
           <div style={{ display: "flex", gap: 8, alignItems: 'center' }}>
+            <span style={{ fontWeight: 'bold', marginRight: '8px' }}>
+              Wszystkich: {totalCount}
+            </span>
             <input
               type="text"
               placeholder="Szukaj..."
@@ -381,6 +386,12 @@ const MasterSamplesTable: React.FC = () => {
               onClick={() => setIsModalOpen(true)}
             >
               ➕ Dodaj Master Sample
+            </button>
+                        <button
+              className="go-to-main-btn-blue"
+              onClick={() => navigate("/goldens/dashboard")}
+            >
+              Statystyki
             </button>
           </div>
         </div>

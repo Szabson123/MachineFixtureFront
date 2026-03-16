@@ -23,7 +23,6 @@ export const SpeaOutOfCompany = () => {
       if (search) {
         url += `&search=${encodeURIComponent(search)}`;
       }
-
       const response = await fetch(url); 
       if (!response.ok) throw new Error('Błąd API');
       const data = await response.json();
