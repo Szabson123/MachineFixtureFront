@@ -2,9 +2,12 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import "./MainTable.css";
 import MasterSampleModal from "../Modals/MainModal";
 import MasterSampleEditModal from "../Modals/MasterSampleEditModal";
+import PdfGeneratorModal from "../Modals/PdfGeneratorModal";
 
 import { useNavigate } from "react-router-dom";
 import { getCSRFToken } from "../../../utils";
+
+import { generateGoldenSamplePDF } from "./PdfGenerator";
 
 type MasterSample = {
   id: number;
@@ -21,6 +24,7 @@ type MasterSample = {
   endcodes: { id: number; code: string }[];
   code_smd: { id: number; code: string }[];
   departament: { id: number; name: string; color: string };
+  additional_project_name: { id: number; name: string } | null;
 };
 
 type PaginatedResponse = {
@@ -39,6 +43,7 @@ const FIELD_LABELS: Record<string, string> = {
   client: "klienta",
   process_name: "proces",
   master_type: "typ",
+  additional_project_name: "dodatkową nazwę projektu",
 };
 
 const MasterSamplesTable: React.FC = () => {
@@ -50,6 +55,8 @@ const MasterSamplesTable: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newItemName, setNewItemName] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [filterValues, setFilterValues] = useState<{ id: number; name: string }[]>([]);
@@ -65,6 +72,7 @@ const MasterSamplesTable: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const listAbortRef = useRef<AbortController | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -115,7 +123,6 @@ const MasterSamplesTable: React.FC = () => {
     []
   );
 
-  // Pobieranie danych użytkownika (imię i nazwisko)
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -203,6 +210,58 @@ const MasterSamplesTable: React.FC = () => {
       .catch((err) => console.error("Error fetching filter values:", err))
       .finally(() => setLoadingFilters(false));
   };
+const handleExportPDF = async (proces: string, produkt: string) => {
+  setIsPdfModalOpen(false);
+  try {
+    setIsExporting(true);
+    
+    let url = buildBaseUrl();
+    url = url.replace(/[?&]$/, "");
+    const finalUrl = url.includes("?") 
+      ? `${url}&no_pagination=true` 
+      : `${url}?no_pagination=true`;
+
+    const res = await fetch(finalUrl);
+    
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Serwer zwrócił błąd ${res.status}: ${errorText}`);
+    }
+
+    const rawText = await res.text();
+    console.log("Surowa odpowiedź z serwera (pierwsze 100 znaków):", rawText.substring(0, 100));
+
+    let json;
+    try {
+      json = JSON.parse(rawText);
+    } catch (e) {
+      throw new Error("Serwer nie zwrócił poprawnego JSONa. Sprawdź zakładkę Network -> Response.");
+    }
+
+    let dataToExport = [];
+    if (Array.isArray(json)) {
+      dataToExport = json;
+    } else if (json && json.results && Array.isArray(json.results)) {
+      dataToExport = json.results;
+    } else {
+      console.error("Niespodziewana struktura JSON:", json);
+      throw new Error("Struktura danych z API jest nieprawidłowa (brak listy rekordów).");
+    }
+
+    if (dataToExport.length === 0) {
+      alert("Brak danych do wygenerowania PDF (lista jest pusta).");
+      return;
+    }
+
+    // Wywołanie generatora
+    generateGoldenSamplePDF(dataToExport, user, proces, produkt);
+
+  } catch (err: any) {
+    alert(`Błąd: ${err.message}`);
+  } finally {
+    setIsExporting(false);
+  }
+};
 
   const handleAddNewItem = async () => {
     if (!contextField || !newItemName.trim()) return;
@@ -212,6 +271,7 @@ const MasterSamplesTable: React.FC = () => {
       client: "/api/golden-samples/mastersamples/client-name/",
       process_name: "/api/golden-samples/mastersamples/process-name/",
       master_type: "/api/golden-samples/mastersamples/type-name/",
+      additional_project_name: "/api/golden-samples/mastersamples/additional-name/",
     };
 
     const endpoint = endpointMap[contextField];
@@ -318,7 +378,6 @@ const MasterSamplesTable: React.FC = () => {
             gap: '10px'
           }}
         >
-          {/* LEWA STRONA: Sekcja Powitania / Logowania */}
           <div style={{ display: 'flex', alignItems: 'center', marginRight: 'auto' }}>
             {user ? (
               <div 
@@ -345,13 +404,12 @@ const MasterSamplesTable: React.FC = () => {
               <button
                 className="a-auth-btn"
                 onClick={() => navigate("/login")}
-                style={{ margin: 0 }} // Reset marginesu jeśli klasa go posiada
+                style={{ margin: 0 }}
               >
                 Zaloguj
               </button>
             )}
 
-            {/* Wyświetlanie aktywnych filtrów obok lub pod logowaniem - opcjonalnie */}
              <div className="active-filters" style={{ marginLeft: '16px' }}>
                 {Object.entries(selectedFilters).map(([field, values]) =>
                   values.map((id) => (
@@ -375,6 +433,16 @@ const MasterSamplesTable: React.FC = () => {
             <span style={{ fontWeight: 'bold', marginRight: '8px' }}>
               Wszystkich: {totalCount}
             </span>
+            {user && (
+              <button
+                className="go-to-main-btn-blue"
+                onClick={() => setIsPdfModalOpen(true)}
+                disabled={isExporting}
+                style={{ backgroundColor: isExporting ? '#ccc' : '#d2b6ff', border: 'none' }}
+              >
+                {isExporting ? "Generowanie..." : "📄 Generuj PDF"}
+              </button>
+            )}
             <input
               type="text"
               placeholder="Szukaj..."
@@ -421,14 +489,38 @@ const MasterSamplesTable: React.FC = () => {
                   {ordering === "-client__name" && "↓"}
                 </th>
                 <th
+                  className="table-title sortable filterable"
+                  onClick={() => handleSort("additional_project_name__name")}
+                  onContextMenu={(e) =>
+                    handleContextMenu(
+                      e,
+                      "additional_project_name",
+                      "/api/golden-samples/mastersamples/additional-name/"
+                    )
+                  }
+                >
+                  Projekt ⚙ {ordering === "additional_project_name__name" && "↑"}
+                  {ordering === "-additional_project_name__name" && "↓"}
+                </th>
+                <th
                   className="table-title sortable"
                   onClick={() => handleSort("project_name")}
                 >
-                  Projekt {ordering === "project_name" && "↑"}{" "}
+                  Nazwa {ordering === "project_name" && "↑"}{" "}
                   {ordering === "-project_name" && "↓"}
                 </th>
-                <th className="table-title">Kod Końcowy</th>
-                <th className="table-title">Kod SMD</th>
+                <th
+                  className="table-title sortable"
+                  onClick={() => handleSort("min_endcode")}
+                >
+                  Kod Końcowy {ordering === "min_endcode" && "↑"} {ordering === "-min_endcode" && "↓"}
+                </th>
+                <th
+                  className="table-title sortable"
+                  onClick={() => handleSort("min_smd_code")}
+                >
+                  Kod SMD {ordering === "min_smd_code" && "↑"} {ordering === "-min_smd_code" && "↓"}
+                </th>
                 <th
                   className="table-title sortable"
                   onClick={() => handleSort("process_name__name")}
@@ -522,6 +614,13 @@ const MasterSamplesTable: React.FC = () => {
                 >
                   <td>{sample.id}</td>
                   <td>{sample.client?.name}</td>
+                  <td className="highlighted">
+                    {sample.additional_project_name ? (
+                      <span>{sample.additional_project_name.name}</span>
+                    ) : (
+                      "-"
+                    )}
+                  </td>
                   <td className="highlighted">{sample.project_name}</td>
                   <td>
                     {sample.endcodes.map((e) => (
@@ -608,6 +707,11 @@ const MasterSamplesTable: React.FC = () => {
           setData((prev) => prev.map((it) => (it.id === updatedRow.id ? { ...it, ...updatedRow } : it)));
         }}
       />
+      <PdfGeneratorModal
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        onGenerate={handleExportPDF}
+      />
 
       {isAddModalOpen && (
         <div className="g-modal-overlay" aria-modal="true" role="dialog">
@@ -664,7 +768,7 @@ const MasterSamplesTable: React.FC = () => {
             <div className="context-menu-loading">Ładowanie...</div>
           ) : (
            <>
-            {["client", "process_name", "master_type"].includes(contextField || "") && (
+            {["client", "process_name", "master_type", "additional_project_name"].includes(contextField || "") && (
               <>
                 <button
                   className="context-add-btn"

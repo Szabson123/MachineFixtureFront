@@ -3,6 +3,7 @@ import "./MainModal.css";
 import { getCSRFToken } from "../../../utils";
 import { pdf } from '@react-pdf/renderer';
 import LabelPDF, {LabelData} from "../MainTable/LabelPDF";
+import SampleSubobjectsModal, { Subobject } from "./SampleSubobjectsModal";
 
 type Option = { id: number; name: string };
 
@@ -47,6 +48,9 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
   const [departaments, setDepartaments] = useState<Option[]>([]);
   const [types, setTypes] = useState<Option[]>([]);
 
+  const [additionalProjects, setAdditionalProjects] = useState<Option[]>([]);
+  const [additionalProject, setAdditionalProject] = useState<number | "">("");
+
   const [client, setClient] = useState<number | "">("");
   const [processName, setProcessName] = useState<number | "">("");
   const [departament, setDepartament] = useState<number | "">("");
@@ -70,6 +74,8 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
   const [location, setLocation] = useState("");
 
   const [fullData, setFullData] = useState<any>(null);
+  const [subobjects, setSubobjects] = useState<Subobject[]>([]);
+  const [isSubModalOpen, setIsSubModalOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !id) return;
@@ -79,9 +85,11 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
       fetch("/api/golden-samples/mastersamples/process-name/").then(r => r.json()),
       fetch("/api/golden-samples/mastersamples/departament-name/").then(r => r.json()),
       fetch("/api/golden-samples/mastersamples/type-name/").then(r => r.json()),
+
+      fetch("/api/golden-samples/mastersamples/additional-name/").then(r => r.json()),
     ])
-      .then(([c, p, d, t]) => {
-        setClients(c); setProcesses(p); setDepartaments(d); setTypes(t);
+      .then(([c, p, d, t, ap]) => {
+        setClients(c); setProcesses(p); setDepartaments(d); setTypes(t); setAdditionalProjects(ap);
       })
       .catch((e) => console.error("Dicts error:", e))
       .finally(() => setLoadingDicts(false));
@@ -109,8 +117,10 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
         setFullData(data);
+        setSubobjects(data.subobjects || []);
 
         setClient(normalizeId(data.client));
+        setAdditionalProject(normalizeId(data.additional_project_name));
         setProcessName(normalizeId(data.process_name));
         setDepartament(normalizeId(data.departament));
         setMasterType(normalizeId(data.master_type));
@@ -182,6 +192,7 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
 
     const payload: any = {
       client,
+      additional_project_name: additionalProject,
       process_name: processName,
       departament,
       master_type: masterType,
@@ -194,6 +205,7 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
       location: location.trim(),
       code_smd: buildCodes(codeSmd),
       endcodes: buildCodes(endcodes),
+      subobjects: subobjects.map(({ msn, desc }) => ({ msn, desc })),
     };
 
     const csrfToken = getCSRFToken();
@@ -290,6 +302,19 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
                   </select>
                 </div>
                 <div className="g-form-group">
+                  <label className="g-form-label">Projekt</label>
+                  <select 
+                    className="g-form-select" 
+                    value={additionalProject} 
+                    onChange={(e) => setAdditionalProject(toNumberOrEmpty(e.target.value))}
+                  >
+                    <option value="">-- Wybierz projekt --</option>
+                    {additionalProjects.map((ap) => (
+                      <option key={ap.id} value={String(ap.id)}>{ap.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="g-form-group">
                   <label className="g-form-label">Wydział</label>
                   <select className="g-form-select" value={departament} onChange={(e) => setDepartament(toNumberOrEmpty(e.target.value))}>
                     <option value="">-- Wybierz wydział --</option>
@@ -304,7 +329,7 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
                   </select>
                 </div>
                 <div className="g-form-group">
-                  <label className="g-form-label">Nazwa projektu</label>
+                  <label className="g-form-label">Nazwa</label>
                   <input type="text" className="g-form-input" value={projectName} onChange={(e) => setProjectName(e.target.value)} />
                 </div>
                 <div className="g-form-group">
@@ -350,7 +375,6 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
                   />
                 </div>
 
-                {/* Kody Końcowe */}
                 <div className="g-form-group" style={{ flex: 1 }}>
                   <label className="g-form-label">Kody Końcowe</label>
                   <input 
@@ -391,7 +415,6 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
                     Usuń
                   </button>
                   
-                  {/* NOWY PRZYCISK GENEROWANIA */}
                   <button 
                     type="button" 
                     onClick={handleGeneratePDF} 
@@ -413,6 +436,15 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px' }}>
+                  <button 
+                    type="button" 
+                    className="g-details-btn" 
+                    onClick={() => setIsSubModalOpen(true)}
+                    title="Edytuj pod-części (Subobjects)"
+                    style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+                  >
+                    📦 Panel ({subobjects.length})
+                  </button>
                   <button type="button" className="g-cancel-btn" onClick={onClose} disabled={saving}>
                     Anuluj
                   </button>
@@ -425,6 +457,16 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
           )}
         </form>
       </div>
+      <SampleSubobjectsModal
+  isOpen={isSubModalOpen}
+  initial={subobjects}
+  onClose={() => setIsSubModalOpen(false)}
+  onSave={(updatedList) => {
+    setSubobjects(updatedList);
+    setIsSubModalOpen(false);
+  }}
+  title={`Edytuj panel dla SN: ${sn}`}
+/>
     </div>
   );
 };

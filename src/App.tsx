@@ -29,14 +29,18 @@ import AdminObjectDetails from './components/admin/admin-process/admin-object-de
 import AdminProductObjectDetailsPage from './components/admin/admin-process/admin-object-mistakes';
 import Login from './components/User/user-login';
 import RequireAuth from './components/User/RequiredAuth';
+import MainPageUnlinker from './components/unlinker/MainPageUnlinker';
 
 import DashboardGoldens from './components/goldens/MainTable/DashboardGoldens';
+import History from './components/unlinker/History';
 
 import { SpeaWardrobe } from './components/spea_control/views/SpeaWardobe';
 import { SpeaInCompany } from './components/spea_control/views/SpeaInCompany';
 import { SpeaOutOfCompany } from './components/spea_control/views/SpeaOutOfCompany';
 import { SpeaLayout } from './components/spea_control/SpeaLayout';
 import { AllSpea } from './components/spea_control/views/AllSpea';
+
+import { CheckBattery } from './components/mes/CheckBatery';
 
 function App() {
   return (
@@ -46,13 +50,16 @@ function App() {
         {/* PUBLIC */}
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<SSEComponent />} />
+        
+        <Route path="unlinker/main-page" element={<MainPageUnlinker />} />
+        <Route path="batery-check" element={<CheckBattery />} />
+        <Route path="history" element={<History />}></Route>
 
         <Route path="/spea" element={<SpeaLayout />}>
         <Route path="wardrobe" element={<SpeaWardrobe />} />
         <Route path="in-company" element={<SpeaInCompany />} />
         <Route path="outside" element={<SpeaOutOfCompany />} />
         <Route path="all" element={<AllSpea />} />
-        <Route index element={<SpeaWardrobe />} />
 
       </Route>
         <Route path="/goldens" element={<GoldenList />} />

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import SampleSubobjectsModal, { Subobject } from "./SampleSubobjectsModal";
 import "./MainModal.css";
 
 interface ModalProps {
@@ -15,12 +16,12 @@ type Sample = {
   details?: string;
   location?: string;
   _uid?: string;
+  subobjects?: Subobject[];
 };
 
 const toNumberOrEmpty = (v: string) => (v === "" ? "" : Number(v));
 const uid = () => Math.random().toString(36).slice(2, 9);
 
-/** Mini-modal do edycji opisu pojedyńczej próbki */
 const SampleDetailsModal: React.FC<{
   isOpen: boolean;
   title?: string;
@@ -78,6 +79,8 @@ const SampleDetailsModal: React.FC<{
 
 const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const [clients, setClients] = useState<Option[]>([]);
+  const [additionalProjects, setAdditionalProjects] = useState<Option[]>([]);
+  const [selectedAdditionalProject, setSelectedAdditionalProject] = useState<number | "">("");
   const [processes, setProcesses] = useState<Option[]>([]);
   const [departaments, setDepartaments] = useState<Option[]>([]);
   const [types, setTypes] = useState<Option[]>([]);
@@ -91,6 +94,8 @@ const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess })
   const [pcbRevCode, setPcbRevCode] = useState<string>("R1");
   const [codeSmd, setCodeSmd] = useState<string>("");
   const [endcodes, setEndcodes] = useState<string>("");
+
+  const [subObjectIdx, setSubObjectIdx] = useState<number | null>(null);
 
   const [globalDetails, setGlobalDetails] = useState<string>("");
 
@@ -106,6 +111,7 @@ const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess })
 
 const resetForm = () => {
     setClient("");
+    setSelectedAdditionalProject("");
     setProcessName("");
     setDepartament("");
     setProjectName("");
@@ -114,7 +120,6 @@ const resetForm = () => {
     setCodeSmd("");
     setEndcodes("");
     setGlobalDetails("");
-    // Dodaj location: "" tutaj
     setSamples([{ sn: "", master_type: "", details: "", location: "", _uid: uid() }]);
     setSubmitError(null);
     setEditingIdx(null);
@@ -128,7 +133,7 @@ const resetForm = () => {
 
     (async () => {
       try {
-        const [c, p, d, t] = await Promise.all([
+        const [c, p, ap, d, t] = await Promise.all([
           fetch("/api/golden-samples/mastersamples/client-name/").then(async r => {
             if (!r.ok) throw new Error(await r.text());
             return r.json();
@@ -137,6 +142,8 @@ const resetForm = () => {
             if (!r.ok) throw new Error(await r.text());
             return r.json();
           }),
+          fetch("/api/golden-samples/mastersamples/additional-name/").then(r => r.json()),
+
           fetch("/api/golden-samples/mastersamples/departament-name/").then(async r => {
             if (!r.ok) throw new Error(await r.text());
             return r.json();
@@ -147,6 +154,7 @@ const resetForm = () => {
           }),
         ]);
         setClients(c);
+        setAdditionalProjects(ap);
         setProcesses(p);
         setDepartaments(d);
         setTypes(t);
@@ -198,15 +206,15 @@ const resetForm = () => {
       .map((s) => ({
         sn: s.sn.trim(),
         master_type: s.master_type,
-        // DODAJ TĘ LINIJKĘ PONIŻEJ:
-        ...(s.location && s.location.trim() ? { location: s.location.trim() } : {}),
-        // ------------------------
-        ...(s.details && s.details.trim() ? { details: s.details.trim() } : {}),
+        ...(s.location?.trim() ? { location: s.location.trim() } : {}),
+        ...(s.details?.trim() ? { details: s.details.trim() } : {}),
+        subobjects: s.subobjects || [],
       }))
       .filter((s) => s.sn !== "" && s.master_type !== "");
 
     const payload = {
       client,
+      additional_project_name: selectedAdditionalProject,
       process_name: processName,
       departament,
       project_name: projectName.trim(),
@@ -277,7 +285,21 @@ const resetForm = () => {
                 ))}
               </select>
             </div>
-
+            <div className="g-form-group">
+              <label className="g-form-label">Projekt</label>
+              <select
+                className="g-form-select"
+                value={selectedAdditionalProject} // Używamy stanu pojedynczej wartości
+                onChange={(e) => setSelectedAdditionalProject(toNumberOrEmpty(e.target.value))}
+              >
+                <option value="">-- Wybierz dodatkową nazwę --</option>
+                {additionalProjects.map((ap) => ( // Iterujemy po tablicy opcji
+                  <option key={ap.id} value={String(ap.id)}>
+                    {ap.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="g-form-group">
               <label className="g-form-label">Proces</label>
               <select
@@ -309,7 +331,7 @@ const resetForm = () => {
             </div>
 
             <div className="g-form-group">
-              <label className="g-form-label">Nazwa projektu</label>
+              <label className="g-form-label">Nazwa</label>
               <input
                 type="text"
                 className="g-form-input"
@@ -340,7 +362,6 @@ const resetForm = () => {
               />
             </div>
 
-            {/* Code SMD / Endcodes */}
             <div className="g-form-group">
               <label className="g-form-label">Code SMD</label>
               <input
@@ -366,7 +387,6 @@ const resetForm = () => {
             </div>
           </div>
 
-          {/* Samples */}
           <div className="g-samples-section">
             <div className="g-section-header">
               <h3 className="g-section-title">Samples</h3>
@@ -405,7 +425,6 @@ const resetForm = () => {
                         className="g-form-input"
                         placeholder="Lokalizacja"
                         value={sample.location || ""} 
-                        // TUTAJ ZMIANA: aktualizujemy klucz "location", a nie "sn"
                         onChange={(e) => handleSampleChange(idx, "location", e.target.value)} 
                       />
 
@@ -416,6 +435,17 @@ const resetForm = () => {
                         title={hasDetails ? "Edytuj opis próbki" : "Dodaj opis próbki"}
                       >
                         📝 {hasDetails && <span className="g-details-dot" aria-label="opis dodany" />}
+                      </button>
+                      <button
+                        type="button"
+                        className="g-details-btn"
+                        onClick={() => setSubObjectIdx(idx)}
+                        title="Zarządzaj panelem (subobjects)"
+                        style={{ marginLeft: "4px" }}
+                      >
+                        📦 {sample.subobjects && sample.subobjects.length > 0 && (
+                          <span className="g-details-dot" style={{ backgroundColor: "#3182ce" }} />
+                        )}
                       </button>
 
                       {samples.length > 1 && (
@@ -463,6 +493,18 @@ const resetForm = () => {
           onClose={() => setEditingIdx(null)}
         />
       )}
+      {subObjectIdx !== null && (
+  <SampleSubobjectsModal
+    isOpen={true}
+    initial={samples[subObjectIdx]?.subobjects || []}
+    title={`Pod-części dla SN: ${samples[subObjectIdx]?.sn || "nowej próbki"}`}
+    onClose={() => setSubObjectIdx(null)}
+    onSave={(data) => {
+      handleSampleChange(subObjectIdx, "subobjects", data);
+      setSubObjectIdx(null);
+    }}
+  />
+)}
     </div>
   );
 };

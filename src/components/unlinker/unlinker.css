@@ -1,0 +1,302 @@
+.unl-container {
+    max-width: 1300px;
+    margin: 0 auto;
+}
+.unl-main-grid {
+    display: flex;
+    gap: 2px;
+    background-color: #ddd;
+    border: 1px solid #ddd;
+}
+
+.unl-column {
+    flex: 1;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    height: 600px;
+}
+
+.unl-col-header {
+    font-family: Poppins;
+    padding: 15px;
+    font-weight: bold;
+    height: 90px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-bottom: 2px solid #ccc;
+}
+.unl-col-little-header{
+    font-family: Poppins;
+    font-weight: bold;
+    margin-bottom: 5px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.unl-header-available { border-bottom-color: #007bff; }
+.unl-header-selected { border-bottom-color: #28a745; }
+.unl-header-action { border-bottom-color: #dc3545; }
+
+.unl-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.unl-phase-item {
+    padding: 12px;
+    margin-bottom: 8px;
+    border: 1px solid #eee;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.unl-phase-item:hover {
+    background-color: #f8f9fa;
+}
+
+.unl-phase-item.selected {
+    background-color: #e7f3ff;
+    border-color: #b3d7ff;
+}
+
+.unl-search-input {
+    width: 100%;
+    padding: 8px;
+    font-size: 13px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    box-sizing: border-box;
+    margin-top: 5px;
+}
+
+.unl-selected-item {
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    background-color: #f1f8f1;
+    border: 1px solid #d4edda;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.unl-remove-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #dc3545;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.unl-textarea {
+    flex: 1;
+    width: 100%;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 13px;
+    resize: none;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+.unl-execute-btn {
+    width: 100%;
+    margin-top: 15px;
+    padding: 15px;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.unl-btn-active {
+    background-color: #dc3545;
+    cursor: pointer;
+}
+
+.unl-btn-inactive {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.unl-navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 40px;
+    height: 60px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.unl-logo {
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: #343a40;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.unl-nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.unl-nav-item {
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #6c757d;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+.unl-nav-item:hover {
+    color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.unl-user-badge {
+    background-color: #e7f3ff;
+    color: #007bff;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+    border: 1px solid #b3d7ff;
+}
+
+.unl-btn-logout {
+    color: #dc3545;
+    background: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+.unl-btn-logout:hover {
+    background-color: #fff5f5;
+    border-color: #feb2b2;
+}
+
+.unl-btn-login {
+    background-color: #007bff;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.unl-btn-login:hover {
+    background-color: #0056b3;
+}
+
+.unl-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.unl-modal-content {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    width: 300px;
+    color: #333;
+}
+
+.unl-modal-input {
+    width: 100%;
+    padding: 10px;
+    margin: 15px 0;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.unl-modal-btn {
+    width: 100%;
+    padding: 10px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.unl-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: white;
+}
+
+.unl-history-table th, .unl-history-table td {
+    padding: 12px;
+    border: 1px solid #eee;
+    text-align: left;
+}
+
+.unl-status-pill {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+}
+
+.unl-status-ip { background-color: #ffc107; color: #000; }
+.unl-status-sc { background-color: #28a745; }
+.unl-status-er { background-color: #dc3545; }
+.unl-status-un { background-color: #6c757d; }
+
+.unl-sub-row {
+    background-color: #f9f9f9;
+    font-size: 13px;
+}
+
+/* GŁÓWNY KONTENER */
+.back {
+    font-family: 'Poppins', sans-serif !important;
+    color: #333; 
+}
+
+/* WYMUSZENIE CZCIONKI DLA WSZYSTKICH DZIECI (inputy, buttony, tabele) */
+.back * {
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/* Opcjonalnie: poprawa wyglądu textarea, żeby nie wyłamywał się z designu */
+.unl-textarea {
+    font-family: 'Poppins', sans-serif !important; 
+    /* ... reszta twoich styli .unl-textarea ... */
+}

@@ -53,7 +53,7 @@ const ProductLogList: React.FC = () => {
 
     try {
       const response = await fetch(
-        `/api/process/product-object-process-logs/?sn=${sn}`
+        `/api/process/product-object-process-logs/?sn=${encodeURIComponent(sn)}`
       );
       if (!response.ok) {
         throw new Error("Błąd pobierania logów");

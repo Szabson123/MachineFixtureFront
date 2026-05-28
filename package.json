@@ -18,6 +18,8 @@
     "axios": "^1.8.4",
     "chart.js": "^4.5.1",
     "http-proxy-middleware": "^3.0.3",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "konva": "^9.3.20",
     "react": "^19.0.0",
     "react-chartjs-2": "^5.3.1",
