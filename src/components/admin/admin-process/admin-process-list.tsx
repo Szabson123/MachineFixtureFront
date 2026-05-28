@@ -59,7 +59,6 @@ const AdminProcessesPage: React.FC = () => {
             </svg>
           </button>
 
-          {/* NOWY DIV GRUPUJĄCY TEKST */}
           <div>
             <h1>Lista Procesów</h1>
             <p>Zarządzaj procesami produkcyjnymi</p>

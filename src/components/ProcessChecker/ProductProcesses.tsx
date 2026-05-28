@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import ReactFlow, {
-  Edge,
-  Node
-} from 'reactflow';
+import ReactFlow, { Edge, Node} from 'reactflow';
 import 'reactflow/dist/style.css';
 import './ProductProcesses.css';
 import { useParams } from 'react-router-dom';

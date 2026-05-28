@@ -81,7 +81,6 @@ const StatusGroupsTable = () => {
   return (
     <div className="ag-container">
       <div className="ag-card">
-        {/* ZMIANA W NAGŁÓWKU */}
         <div className="ag-header">
           <button 
             className="ag-back-btn" 

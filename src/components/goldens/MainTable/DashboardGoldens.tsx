@@ -3,7 +3,6 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import './DashboardGoldens.css';
 
-// Rejestracja modułów Chart.js
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 interface Stats {
@@ -52,7 +51,6 @@ const DashboardGoldens: React.FC = () => {
   if (loading) return <div className="da-container">Ładowanie...</div>;
   if (!data) return <div className="da-container">Brak danych.</div>;
 
-  // Konfiguracja wykresu
   const chartData = {
     labels: ['Pass', 'Fail', 'Calib'],
     datasets: [
@@ -89,7 +87,6 @@ const DashboardGoldens: React.FC = () => {
         </div>
       </header>
 
-      {/* Karty liczbowe */}
       <div className="da-stats-grid">
         <div className="da-card">
           <h2 className="da-card-title">Wszystkie sample</h2>
@@ -119,10 +116,8 @@ const DashboardGoldens: React.FC = () => {
         </div>
       </div>
 
-      {/* Grid główny: Wykres + Hala Sław */}
       <div className="da-main-grid">
         
-        {/* Lewa kolumna: Wykres */}
         <div className="da-card">
           <h2 className="da-card-title" style={{ marginBottom: '1rem' }}>📊 Podział typów</h2>
           <div className="da-chart-wrapper">
@@ -136,7 +131,6 @@ const DashboardGoldens: React.FC = () => {
           </div>
         </div>
 
-        {/* Prawa kolumna: Hala Sław */}
         <div className="da-card" style={{ borderTop: '1px solid #e5e7eb' }}>
           <h2 className="da-card-title" style={{ marginBottom: '1.5rem', color: '#1f2937' }}>🏆 Hala Sław</h2>
           <div className="da-hall-list">

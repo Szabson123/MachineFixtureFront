@@ -103,7 +103,6 @@ const TrashObjectView: React.FC = () => {
       />
       <div ref={loaderRef} style={{ height: "40px" }} />
 
-      {/* Modal - Trash Form */}
       {showModal && (
         <Modal title="Wyrzuć produkt" onClose={() => setShowModal(false)} hideFooter>
           <form onSubmit={handleTrashSubmit}>

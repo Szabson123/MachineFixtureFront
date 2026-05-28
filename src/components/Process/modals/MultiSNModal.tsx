@@ -72,7 +72,6 @@ const MultiSNModal: React.FC<MultiSNModalProps> = ({
 
     onSubmit(unique, placeName);
     
-    // Reset stanu po sukcesie
     setMultiSNs([""]);
     setMultiErrors([]);
     setPlaceName("");

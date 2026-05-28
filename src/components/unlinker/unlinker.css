@@ -284,19 +284,11 @@
     font-size: 13px;
 }
 
-/* GŁÓWNY KONTENER */
 .back {
     font-family: 'Poppins', sans-serif !important;
     color: #333; 
 }
 
-/* WYMUSZENIE CZCIONKI DLA WSZYSTKICH DZIECI (inputy, buttony, tabele) */
-.back * {
-    font-family: 'Poppins', sans-serif !important;
-}
-
-/* Opcjonalnie: poprawa wyglądu textarea, żeby nie wyłamywał się z designu */
 .unl-textarea {
     font-family: 'Poppins', sans-serif !important; 
-    /* ... reszta twoich styli .unl-textarea ... */
 }

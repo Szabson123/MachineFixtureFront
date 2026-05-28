@@ -363,7 +363,6 @@ const ReceiveObjectView: React.FC = () => {
 
       <div ref={loaderRef} style={{ height: "40px" }} />
 
-      {/* Continue / Receive Modal */}
       {showModal && (
         <Modal title={isProductionProcess ? "Kontynuuj produkcję" : "Dodaj produkt"} onClose={() => setShowModal(false)} hideFooter>
           <form 
@@ -403,7 +402,6 @@ const ReceiveObjectView: React.FC = () => {
   <Toast message="✅ Operacja zakończona pomyślnie!" onClose={() => setShowToast(false)} />
 )}
 
-      {/* New Production Modal */}
       {showProductionModal && (
         <Modal title="Nowa produkcja" onClose={() => setShowProductionModal(false)} hideFooter>
           <form onSubmit={handleStartNewProduction}>

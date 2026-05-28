@@ -3,7 +3,7 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #f0f2f5; /* Jasnoszare tło strony */
+  background-color: #f0f2f5;
 }
 
 .login-form {
@@ -15,7 +15,7 @@
   max-width: 400px;
   display: flex;
   flex-direction: column;
-  gap: 1.2rem; /* Odstępy między elementami */
+  gap: 1.2rem;
 }
 
 .login-form h2 {
@@ -31,13 +31,13 @@
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 16px;
-  box-sizing: border-box; /* Ważne, żeby padding nie rozpychał inputa */
+  box-sizing: border-box;
   transition: border-color 0.2s;
 }
 
 .login-form-input:focus {
   outline: none;
-  border-color: #007bff; /* Kolor aktywny (niebieski) */
+  border-color: #007bff;
   box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
 }
 

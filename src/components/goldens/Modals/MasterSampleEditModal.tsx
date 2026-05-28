@@ -350,7 +350,6 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
                 </div>
                 <div style={{ display: "flex", gap: "16px", gridColumn: "1 / -1" }}>
   
-                {/* Code SMD */}
                 <div className="g-form-group" style={{ flex: 1 }}>
                   <label className="g-form-label">Code SMD</label>
                   <input 
@@ -363,7 +362,6 @@ const MasterSampleEditModal: React.FC<EditModalProps> = ({
                   <div className="g-form-hint">Oddzielone przecinkami</div>
                 </div>
 
-                {/* Lokalizacja */}
                 <div className="g-form-group" style={{ flex: 1 }}>
                   <label className="g-form-label">Lokalizacja</label>
                   <input 

@@ -90,7 +90,6 @@ const LabelPDF: React.FC<LabelPDFProps> = ({ data }) => {
   const bgColor = getLabelColor(data.masterTypeName);
   const textColor = getTextColor(bgColor);
   
-  // Formatujemy nazwę do wyświetlenia
   const displayTypeName = formatTypeName(data.masterTypeName);
 
   return (
@@ -98,7 +97,6 @@ const LabelPDF: React.FC<LabelPDFProps> = ({ data }) => {
       <Page size="A4" style={styles.page}>
         <View style={[styles.myCustomBox, { backgroundColor: bgColor }]}>
           
-          {/* Linia 1 */}
           <View style={styles.topRow}>
             <View style={[styles.baseCell, styles.mythickreckt]}>
               <Text style={[styles.textCenter, { color: textColor }]}>Wzorzec {displayTypeName}</Text>
@@ -108,7 +106,6 @@ const LabelPDF: React.FC<LabelPDFProps> = ({ data }) => {
             </View>
           </View>
 
-          {/* Linia 2 */}
           <View style={styles.topRow}>
             <View style={[styles.baseCell, styles.line2mythickreckt1]}>
               <Text style={[styles.textCenter, { color: textColor }]}>Nazwa</Text>
@@ -118,7 +115,6 @@ const LabelPDF: React.FC<LabelPDFProps> = ({ data }) => {
             </View>
           </View>
 
-          {/* Linia 3 */}
           <View style={styles.topRow}>
             <View style={[styles.baseCell, styles.line3mythickreckt1]}>
               <Text style={[styles.textCenter, { color: textColor }]}>{"Kod"}</Text>
@@ -128,7 +124,6 @@ const LabelPDF: React.FC<LabelPDFProps> = ({ data }) => {
             </View>
           </View>
 
-          {/* Linia 4 */}
           <View style={styles.topRow}>
             <View style={[styles.baseCell, styles.line4mythickreckt1]}>
               <Text style={[styles.textCenter, { color: textColor }]}>SMD</Text>
@@ -144,7 +139,6 @@ const LabelPDF: React.FC<LabelPDFProps> = ({ data }) => {
             </View>
           </View>
 
-          {/* Linia 5 - Nagłówki */}
           <View style={styles.topRow}>
             <View style={[styles.baseCell, styles.line5mythickreckt1]}>
               <Text style={[styles.textCenter, { color: textColor }]}>Przygotowal</Text>
@@ -160,7 +154,6 @@ const LabelPDF: React.FC<LabelPDFProps> = ({ data }) => {
             </View>
           </View>
 
-          {/* Linia 6 - Wartości */}
           <View style={styles.topRow}>
             <View style={[styles.baseCell, styles.line5mythickreckt1]}>
               <Text style={[styles.textCentersmall, { color: textColor }]}>{data.preparedBy}</Text>

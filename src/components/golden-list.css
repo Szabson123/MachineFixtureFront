@@ -25,14 +25,13 @@
 
 .list-container {
     overflow-y: auto;
-    max-height: calc(620px - 60px); /* 60px na header */
+    max-height: calc(620px - 60px);
     padding-right: 8px;
     margin-top: 12px;
     scrollbar-width: thin;
     scrollbar-color: #c0c0c0 #f0f0f0;
 }
 
-/* Stylowanie scrollbara dla WebKit */
 .list-container::-webkit-scrollbar {
     width: 6px;
 }

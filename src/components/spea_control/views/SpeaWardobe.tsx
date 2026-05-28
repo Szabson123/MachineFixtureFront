@@ -115,7 +115,7 @@ useEffect(() => {
 
       if (!response.ok) throw new Error('Błąd wysyłki');
 
-      addToast("Wysłano do serwisu zewn. 🚚", "success");
+      addToast("Wysłano do serwisu zewn.", "success");
       fetchData();
 
     } catch (error) {
@@ -167,11 +167,11 @@ useEffect(() => {
           renderDownloadBtn={renderDownloadButton}
           
           onAction={(id) => handleTableAction(id, 'break')}
-          actionLabel="Popsuty 💥"
+          actionLabel="Popsuty"
           actionClass="spea-btn-break"
           
           onSecondaryAction={handleOpenIssueModal}
-          secondaryLabel="Wydaj 📦"
+          secondaryLabel="Wydaj"
           secondaryClass="spea-btn-issue"
           searchQuery={search}
           onSearch={setSearch}
@@ -183,11 +183,11 @@ useEffect(() => {
           renderDownloadBtn={renderDownloadButton}
           
           onAction={(id) => handleTableAction(id, 'fix')}
-          actionLabel="Napraw 🔧"
+          actionLabel="Napraw"
           actionClass="spea-btn-fix"
 
           onSecondaryAction={handleSendToService}
-          secondaryLabel="Serwis 🚚"
+          secondaryLabel="Serwis"
           secondaryClass="spea-btn-service"
           searchQuery={search}
           onSearch={setSearch}

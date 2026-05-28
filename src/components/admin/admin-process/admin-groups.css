@@ -1,5 +1,3 @@
-/* StatusGroupsTable.css */
-
 .ag-container {
   display: flex;
   justify-content: center;
@@ -24,13 +22,11 @@
   border-bottom: 1px solid #f0f0f0;
   background-color: #ffffff;
   
-  /* Flexbox do układu: Przycisk | Tytuł */
   display: flex;
   align-items: center;
-  gap: 15px; /* Odstęp między strzałką a tekstem */
+  gap: 15px;
 }
 
-/* NOWA KLASA DLA PRZYCISKU POWROTU */
 .ag-back-btn {
   background: transparent;
   border: none;
@@ -47,7 +43,7 @@
 .ag-back-btn:hover {
   background-color: #f1f5f9;
   color: #1e293b;
-  transform: translateX(-2px); /* Lekki ruch w lewo przy najechaniu */
+  transform: translateX(-2px);
 }
 
 .ag-title {
@@ -71,7 +67,7 @@
 .ag-table {
   width: 100%;
   border-collapse: collapse;
-  text-align: center; /* Wyśrodkowanie całej tabeli */
+  text-align: center;
 }
 
 .ag-th {
@@ -102,19 +98,16 @@
   text-align: center;
 }
 
-/* Specjalna klasa dla nazwy (pogrubiona) */
 .ag-td-name {
   font-weight: 600;
   color: #333;
 }
 
-/* Specjalna klasa dla daty (mniejsza czcionka) */
 .ag-td-date {
   color: #666;
   font-size: 0.9em;
 }
 
-/* --- Badges --- */
 .ag-badge {
   display: inline-block;
   padding: 6px 14px;
@@ -176,7 +169,6 @@
   transform: translateX(3px);
 }
 
-/* Obsługa braku danych */
 .ag-no-data {
   color: #888;
   padding: 30px;

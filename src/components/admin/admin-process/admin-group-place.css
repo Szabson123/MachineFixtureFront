@@ -37,15 +37,12 @@
   color: #1e293b;
 }
 
-/* --- GRID SYSTEM --- */
 .gp-grid {
   display: grid;
-  /* Dokładnie 3 kolumny o równej szerokości */
   grid-template-columns: repeat(3, 1fr); 
   gap: 30px;
 }
 
-/* Responsywność: na mniejszych ekranach 2 lub 1 kolumna */
 @media (max-width: 992px) {
   .gp-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -57,7 +54,6 @@
   }
 }
 
-/* --- CARD STYLE --- */
 .gp-card {
   background: white;
   border-radius: 16px;
@@ -118,10 +114,9 @@
 .gp-status-text {
   font-weight: 700;
 }
-.gp-status-on { color: #dc2626; } /* Czerwony dla aktywnego zabijania */
-.gp-status-off { color: #16a34a; } /* Zielony dla spokoju */
+.gp-status-on { color: #dc2626; }
+.gp-status-off { color: #16a34a; }
 
-/* --- TOGGLE SWITCH --- */
 .gp-toggle-container {
   width: 56px;
   height: 30px;

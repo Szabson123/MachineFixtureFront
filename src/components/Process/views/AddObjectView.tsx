@@ -398,7 +398,6 @@ const AddObjectView: React.FC = () => {
       }}
     />
 
-      {/* NOWY modal: dodawanie wielu SN do wskazanej matki (dziedziczy miejsce z matki) -> /bulk-create-to-mother/ */}
       {showMultiToMotherModal && (
         <Modal title="Dodaj wiele SN do matki" onClose={() => setShowMultiToMotherModal(false)} hideFooter>
           <form

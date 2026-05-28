@@ -332,7 +332,6 @@ const MoveObjectView: React.FC = () => {
       />
       <div ref={loaderRef} style={{ height: "40px" }} />
 
-      {/* MODAL 1: POJEDYNCZE PRZENOSZENIE */}
       {showMoveModal && (
         <Modal title="Przenieś produkt" onClose={() => setShowMoveModal(false)} hideFooter>
           <form onSubmit={handleSubmit}>
@@ -353,15 +352,13 @@ const MoveObjectView: React.FC = () => {
         </Modal>
       )}
 
-      {/* --- NOWY MODAL: WYCIĄGNIJ WIELE (Z ukrytym miejscem) --- */}
       <MultiSNModal 
         isOpen={showMultiModal}
         onClose={() => setShowMultiModal(false)}
-        onSubmit={handleMultiMoveSubmit} // Używamy nowej funkcji
-        hidePlace={true}                 // Ukrywamy input miejsca
+        onSubmit={handleMultiMoveSubmit}
+        hidePlace={true}
       />
 
-      {/* MODAL 3: DODAWANIE DZIECI DO MATKI */}
       {showMultiToMotherModal && (
         <Modal title="Dodaj wiele SN do matki" onClose={() => setShowMultiToMotherModal(false)} hideFooter>
           <form onSubmit={handleBulkAddChildren}>

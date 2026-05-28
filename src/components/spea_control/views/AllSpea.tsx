@@ -59,7 +59,7 @@ export const AllSpea = () => {
         "X-CSRFToken": getCsrfToken(),
       },
       credentials: "include",
-      body: bodyData ? JSON.stringify(bodyData) : undefined, // Dodajemy body jeśli istnieje
+      body: bodyData ? JSON.stringify(bodyData) : undefined,
     });
 
     if (!response.ok) {
@@ -78,7 +78,7 @@ export const AllSpea = () => {
   const handleFix = async (id: number) => {
     try {
       await changeApiStatus(id, 'set_object_good');
-      addToast("Naprawione! ✅", "success");
+      addToast("Naprawione!", "success");
       fetchData();
     } catch { addToast("Błąd naprawy", "error"); }
   };
@@ -86,7 +86,7 @@ export const AllSpea = () => {
   const handleBackToWardrobe = async (id: number) => {
     try {
       await changeApiStatus(id, 'back_to_wardrobe');
-      addToast("Zwrócono do szafy! 🚪", "success");
+      addToast("Zwrócono do szafy!", "success");
       fetchData();
     } catch { addToast("Błąd zwrotu", "error"); }
   };
@@ -94,7 +94,7 @@ export const AllSpea = () => {
   const handleSendService = async (id: number) => {
     try {
       await changeApiStatus(id, 'send_out_of_company');
-      addToast("Wysłano do serwisu 🚚", "success");
+      addToast("Wysłano do serwisu", "success");
       fetchData();
     } catch { addToast("Błąd wysyłki", "error"); }
   };
@@ -103,7 +103,7 @@ export const AllSpea = () => {
     if (!currentIssueId) return;
     try {
       await changeApiStatus(currentIssueId, 'change_place', { name });
-      addToast(`Wydano na: ${name} 📦`, "success");
+      addToast(`Wydano na: ${name}`, "success");
       fetchData();
     } catch { 
       addToast("Błąd wydawania", "error"); 
@@ -115,7 +115,7 @@ export const AllSpea = () => {
     if (item.out_of_company) {
       return (
         <button className="spea-btn spea-btn-back-company" onClick={() => handleBackToWardrobe(item.id)}>
-          Wróć ↩️
+          Wróć
         </button>
       );
     }
@@ -124,10 +124,10 @@ export const AllSpea = () => {
       return (
         <>
           <button className="spea-btn spea-btn-service" onClick={() => handleSendService(item.id)}>
-            Serwis 🚚
+            Serwis 
           </button>
           <button className="spea-btn spea-btn-fix" onClick={() => handleFix(item.id)}>
-            Napraw 🔧
+            Napraw 
           </button>
         </>
       );
@@ -139,14 +139,14 @@ export const AllSpea = () => {
           className="spea-btn spea-btn-issue" 
           onClick={() => { setCurrentIssueId(item.id); setIsLocationModalOpen(true); }}
         >
-          Wydaj 📦
+          Wydaj 
         </button>
         
         <button 
           className="spea-btn spea-btn-break" 
           onClick={() => { setCurrentActionId(item.id); setIsDiagModalOpen(true); }}
         >
-          Popsuty 💥
+          Popsuty 
         </button>
       </>
     );

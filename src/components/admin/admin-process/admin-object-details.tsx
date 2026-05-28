@@ -186,7 +186,6 @@ useEffect(() => {
         </div>
         <Checkbox label="Karton (is_mother)" name="is_mother" checked={data.is_mother} onChange={handleChange} />
 
-        {/* Zmienione na DateTimeRow z readOnly */}
         <DateTimeRow 
             label="Ostatni ruch" 
             name="last_move" 
@@ -199,7 +198,6 @@ useEffect(() => {
         <Input label="Krótki SN" name="serial_number" value={data.serial_number} onChange={handleChange} />
         <Input label="Pełny SN" name="full_sn" value={data.full_sn} onChange={handleChange} />
 
-        {/* Zmienione na DateTimeRow z readOnly */}
         <DateTimeRow 
             label="Utworzony" 
             name="created_at" 
@@ -207,12 +205,10 @@ useEffect(() => {
             readOnly={true} 
         />
         
-        {/* Pola typu DATA (tylko dzień) */}
         <Input label="Data przydatności" name="expire_date" value={data.expire_date} onChange={handleChange} type="date" />
         <Input label="Data produkcji" name="production_date" value={data.production_date} onChange={handleChange} type="date" />
         <Input label="Przydatność w procesie" name="exp_date_in_process" value={data.exp_date_in_process} onChange={handleChange} type="date" />
         
-        {/* Pole typu DATA + CZAS (edytowalne) */}
         <DateTimeRow label="Kwarantanna" name="quranteen_time" value={data.quranteen_time} onChange={handleChange} />
         <DateTimeRow label="Max w procesie" name="max_in_process" value={data.max_in_process} onChange={handleChange} />
         

@@ -160,7 +160,7 @@ const AdminProcessDetailsPage: React.FC = () => {
                   <tr>
                     <th style={{ width: '60px' }}>ID</th>
                     <th style={{ width: '120px' }}>Data</th>
-                    <th>Obiekt</th> {/* <--- NOWY NAGŁÓWEK */}
+                    <th>Obiekt</th>
                     <th>Stanowisko</th>
                     <th>Operator</th>
                     <th>Ruch</th>

@@ -19,7 +19,6 @@
   color: #1e293b;
 }
 
-/* --- GRID --- */
 .aol-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -38,7 +37,6 @@
   }
 }
 
-/* --- CARD --- */
 .aol-card {
   background: white;
   border-radius: 16px;
@@ -62,7 +60,6 @@
   color: #0f172a;
 }
 
-/* --- EMPTY --- */
 .aol-empty {
   text-align: center;
   color: #94a3b8;

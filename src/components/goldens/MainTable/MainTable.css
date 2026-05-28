@@ -21,10 +21,9 @@
   width: 100%;
 }
 
-/* Nagłówek – poprawiony kontrast */
 .table-container thead {
   background-color: #f5f9fd;
-  color: #0f295d; /* było #ffffff na jasnym tle */
+  color: #0f295d;
 }
 
 .table-container th {
@@ -103,7 +102,6 @@
   color: #333;
 }
 
-/* lepsza nazwa niż .testtest */
 .chip-process{
   background-color: #f5f9fd;
   padding: 4px 7px;

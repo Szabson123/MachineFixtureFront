@@ -37,7 +37,7 @@ const handleSkip = async () => {
     try {
       await onConfirmAction();
       
-      addToast("Status zmieniony na uszkodzony (bez pliku) 👍", "success");
+      addToast("Status zmieniony na uszkodzony (bez pliku)", "success");
       onSuccess();
       handleClose();
     } catch (error) {

@@ -106,7 +106,6 @@ const MasterSampleModal: React.FC<ModalProps> = ({ isOpen, onClose, onSuccess })
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // stan mini-modala per-sample
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
 
 const resetForm = () => {
@@ -289,11 +288,11 @@ const resetForm = () => {
               <label className="g-form-label">Projekt</label>
               <select
                 className="g-form-select"
-                value={selectedAdditionalProject} // Używamy stanu pojedynczej wartości
+                value={selectedAdditionalProject}
                 onChange={(e) => setSelectedAdditionalProject(toNumberOrEmpty(e.target.value))}
               >
                 <option value="">-- Wybierz dodatkową nazwę --</option>
-                {additionalProjects.map((ap) => ( // Iterujemy po tablicy opcji
+                {additionalProjects.map((ap) => (
                   <option key={ap.id} value={String(ap.id)}>
                     {ap.name}
                   </option>

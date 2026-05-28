@@ -253,7 +253,6 @@ const handleExportPDF = async (proces: string, produkt: string) => {
       return;
     }
 
-    // Wywołanie generatora
     generateGoldenSamplePDF(dataToExport, user, proces, produkt);
 
   } catch (err: any) {

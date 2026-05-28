@@ -61,7 +61,7 @@ export const SpeaInCompany = () => {
           if (!response.ok) {
               throw new Error(`Błąd: ${response.status}`);
           }
-          addToast("Zwrócono do szafy! 🚪✅", "success");
+          addToast("Zwrócono do szafy!", "success");
           fetchData();
 
       } catch (error) {
